@@ -1,0 +1,158 @@
+/* ===== custom.css — Thème manuel (Clair/Sombre) via classes =====
+   On applique .theme-light OU .theme-dark sur <html>.
+   Les composants utilisent des variables CSS.
+================================================================= */
+
+:root.theme-dark{
+  --bg:#0D1117;
+  --card:#161B22;
+  --text:#F8FAFC;      /* très clair */
+  --muted:#CBD5E1;
+  --brand:#58A6FF;     /* conso (bleu clair) */
+  --brand-2:#2EA043;   /* prod (vert) */
+  --accent:#FF7B72;    /* corail / points */
+  --ring:rgba(88,166,255,.25);
+}
+
+/* --------- Base / Layout --------- */
+html, body { height:100%; }
+body{
+  font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container-app{ max-width:1200px; margin:18px auto 40px; padding:0 16px; }
+
+/* --------- Switch thème (header) --------- */
+.theme-switch{
+  display:flex; align-items:center; gap:12px; justify-content:flex-end;
+  margin-bottom:10px;
+}
+.theme-switch .form-check{ margin-bottom:0; }
+
+/* --------- Tabs --------- */
+.nav-tabs{ border:0 !important; margin-bottom:14px; }
+.nav-tabs .nav-link{
+  color:var(--text);
+  border:0; margin-right:8px; border-radius:10px; background:transparent;
+}
+.nav-tabs .nav-link:hover{ background:rgba(0,0,0,.05); }
+.theme-dark .nav-tabs .nav-link:hover{ background:#1b2836; }
+.nav-tabs .nav-link.active{
+  background:var(--brand); color:#fff !important; border:0;
+  box-shadow:0 6px 20px var(--ring);
+}
+
+/* --------- Sidebar --------- */
+.sidebar{
+  background:var(--card); border-radius:14px; padding:16px;
+  box-shadow:0 8px 24px rgba(18,38,63,.07);
+  border:1px solid rgba(2,6,23,.05);
+  color:var(--text);
+}
+.sidebar h4{ font-weight:800; letter-spacing:.2px; margin-bottom:10px; }
+.form-label{ font-weight:800; color:var(--muted); }
+.form-select:focus, .form-control:focus{
+  border-color: var(--brand); box-shadow:0 0 0 .25rem var(--ring);
+}
+.form-range::-webkit-slider-thumb{ background:var(--brand); }
+
+/* Boost contraste du sidebar en SOMBRE */
+.theme-dark .sidebar{
+  background: radial-gradient(120% 120% at 0% 0%, #0f1a2a 0%, #151c27 45%, #0d1117 100%);
+  border: 1px solid #2a3a4d;
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.03);
+  color: #f1f5f9 !important;
+}
+.theme-dark .sidebar h4,
+.theme-dark .sidebar .form-label,
+.theme-dark .sidebar label,
+.theme-dark .sidebar .form-text,
+.theme-dark .sidebar .input-group-text{ color:#f1f5f9 !important; }
+.theme-dark .sidebar .form-control,
+.theme-dark .sidebar .form-select{
+  background:#0b1220; color:#f1f5f9; border-color:#2a3a4d;
+}
+.theme-dark .sidebar .form-control::placeholder{ color:#a8b0bb; opacity:1; }
+.theme-dark .sidebar .form-select option{ color:#0f172a; }
+.theme-dark .sidebar .form-control:focus,
+.theme-dark .sidebar .form-select:focus{
+  border-color:#58A6FF; box-shadow:0 0 0 .2rem rgba(88,166,255,.25);
+}
+.theme-dark .sidebar .form-range::-webkit-slider-runnable-track{ background:#2a3a4d; }
+.theme-dark .sidebar .form-range::-moz-range-track{ background:#2a3a4d; }
+.theme-dark .sidebar .form-range::-webkit-slider-thumb{ background:#58A6FF; border:2px solid #0d1117; }
+.theme-dark .sidebar .form-range::-moz-range-thumb{ background:#58A6FF; border:2px solid #0d1117; }
+
+/* --------- Cards --------- */
+.card{
+  background:var(--card); border-radius:14px; padding:16px 18px;
+  box-shadow:0 10px 30px rgba(18,38,63,.08);
+  border:1px solid rgba(2,6,23,.05); margin-bottom:16px; color:var(--text);
+}
+.card h3.section-title{
+  margin:0 0 12px; font-weight:900; font-size:20px; letter-spacing:.2px;
+}
+
+/* --------- Metrics --------- */
+.metric{
+  display:flex; flex-direction:column; gap:8px;
+  border-left:5px solid var(--brand);
+  background:linear-gradient(135deg, #f0fbf9 0%, #ffffff 70%);
+  border-radius:12px; padding:14px 16px; min-height:120px;
+  box-shadow:0 8px 24px rgba(18,38,63,.07);
+  color:var(--text);
+}
+.theme-dark .metric{
+  background:linear-gradient(135deg, #0f1720 0%, #161B22 70%);
+}
+.metric h4{ font-size:13px; margin:0; color:var(--muted); font-weight:900; text-transform:uppercase; letter-spacing:.4px; }
+.metric .value{ font-size:26px; font-weight:900; color:var(--text); line-height:1; }
+.metric small{ color:var(--muted); }
+
+/* --------- Chips --------- */
+.chip{
+  display:inline-flex; align-items:center; gap:8px;
+  background:#e8f3f2; color:#133b38; border-radius:999px;
+  padding:6px 10px; font-weight:800; font-size:12px;
+}
+.theme-dark .chip{ background:#0e2744; color:#d7ecff; box-shadow: inset 0 0 0 1px rgba(94,132,182,.25); }
+
+/* --------- Plotly tweaks --------- */
+.js-plotly-plot .plotly .modebar{ background:transparent; border:0; }
+.js-plotly-plot .plotly .modebar-btn{ opacity:.9; }
+.js-plotly-plot .plotly .modebar-btn:hover{ opacity:1; }
+
+/* Utilities */
+.mb-2{ margin-bottom:8px; } .mb-3{ margin-bottom:12px; } .mb-4{ margin-bottom:18px; }
+.mt-2{ margin-top:8px; } .mt-3{ margin-top:12px; } .mt-4{ margin-top:18px; }
+
+
+/* === Fix visibilité des onglets actifs === */
+
+/* Thème CLAIR : fond pâle + texte bleu foncé */
+.theme-light .nav-tabs .nav-link {
+  color: #0B162C;              /* texte des onglets inactifs */
+}
+.theme-light .nav-tabs .nav-link.active,
+.theme-light .nav-tabs .nav-link.active:hover,
+.theme-light .nav-tabs .nav-link.active:focus {
+  background: #E9F2FF;         /* bleu très pâle */
+  color: #0B162C !important;    /* *** le libellé reste visible *** */
+  border: 1px solid rgba(31,111,235,.35);
+  box-shadow: 0 6px 18px rgba(31,111,235,.18);
+}
+
+/* Thème SOMBRE : fond bleu marqué + texte blanc (contraste) */
+.theme-dark .nav-tabs .nav-link { color: #F8FAFC; }
+.theme-dark .nav-tabs .nav-link.active,
+.theme-dark .nav-tabs .nav-link.active:hover,
+.theme-dark .nav-tabs .nav-link.active:focus {
+  background: var(--brand);
+  color: #ffffff !important;
+  border-color: transparent;
+  box-shadow: 0 6px 18px var(--ring);
+}
