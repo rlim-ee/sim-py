@@ -232,12 +232,6 @@ def server(input, output, session):
         return _style_fig(p)
 
     # ---- Infos réactives
-    @render.text
-    def info_conso_dc():
-        nb_dc = input.nb_dc()
-        facteur = input.facteur_charge() / 100.0
-        conso_dc_2025 = dc_data.loc[0, "Conso"] * nb_dc * facteur
-        return f"{conso_dc_2025:.3f} TWh"
 
     @render.text
     def info_conso_totale():

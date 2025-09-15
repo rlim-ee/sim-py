@@ -87,8 +87,7 @@ app_ui = ui.page_fluid(
                            sw.output_widget("energy_plot"),
                            ui.div({"class": "mt-2"},
                                   ui.row(
-                                      ui.column(6, ui.div(ui.strong("Consommation DC en 2025 : "), ui.output_text("info_conso_dc"))),
-                                      ui.column(6, ui.div(ui.strong("Conso actuelle + DC en 2035 : "), ui.output_text("info_conso_totale"))),
+                                      ui.column(12, ui.div(ui.strong("Conso actuelle + conso DC en 2035 : "), ui.output_text("info_conso_totale"))),
                                   ),
                            ),
                     ),
