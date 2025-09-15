@@ -243,6 +243,34 @@ def server(input, output, session):
 
     # ---- Équivalents (2035)
     energy_per_dc_gwh = 8700  # GWh par DC
+    
+    # Parc nucléaire français
+    NUC_REACTORS_TOTAL = 56
+    
+    def _equiv_nuke_float() -> float:
+        """Équivalent réacteurs pour la conso 2035 simulée."""
+        nb_dc = input.nb_dc() or 1
+        facteur = input.facteur_charge() / 100.0
+        conso_2035_twh = float(dc_data.loc[dc_data["Annee"] == 2035, "Conso"].iloc[0] * nb_dc * facteur)
+        return conso_2035_twh / capacities["nuke"]
+    
+    @render.text
+    def nuke_value():
+        val = int(round(_equiv_nuke_float()))
+        return f"{val:,}".replace(",", " ")
+    
+    @render.text
+    def nuke_pct_total():
+        eq = _equiv_nuke_float()
+        pct = (eq / NUC_REACTORS_TOTAL) * 100.0
+        return f"{NUC_REACTORS_TOTAL} au total - soit {pct:.2f} % du nombre total"
+    
+    # Surface de référence
+    AURA_KM2 = 69_711
+    
+    def _fmt(x: float, decimals: int = 2) -> str:
+        """Format 12 345.67 -> '12 345.67' (séparateur d'espace)"""
+        return f"{x:,.{decimals}f}".replace(",", " ")
 
     @render.text
     def wind_surface():
@@ -250,8 +278,9 @@ def server(input, output, session):
         surface_par_eolienne_km2 = 0.78
         total_gwh = input.nb_dc() * energy_per_dc_gwh
         nb_eoliennes = total_gwh / production_par_eolienne_gwh
-        surface_km2 = round(nb_eoliennes * surface_par_eolienne_km2, 2)
-        return f"≈ {surface_km2} km² occupés"
+        surface_km2 = nb_eoliennes * surface_par_eolienne_km2
+        pct_fr = (surface_km2 / AURA_KM2) * 100
+        return f"≈ {_fmt(surface_km2)} km² occupés — soit {_fmt(pct_fr)} % de l'Auvergne-Rhône-Alpes"
 
     @render.text
     def solar_surface():
@@ -259,10 +288,11 @@ def server(input, output, session):
         production_totale_twh_fr = 25
         nb_installations_fr = 600_000
         prod_par_install_twh = production_totale_twh_fr / nb_installations_fr
-        total_twh = (input.nb_dc() * energy_per_dc_gwh) / 1000.0
+        total_twh = (input.nb_dc() * energy_per_dc_gwh) / 1000.0  # GWh → TWh
         nb_inst = total_twh / prod_par_install_twh
-        surface_km2 = round((nb_inst * taille_m2) / 1e6, 2)
-        return f"≈ {surface_km2} km² occupés"
+        surface_km2 = (nb_inst * taille_m2) / 1e6
+        pct_fr = (surface_km2 / AURA_KM2) * 100
+        return f"≈ {_fmt(surface_km2)} km² occupés — soit {_fmt(pct_fr)} % de l'Auvergne-Rhône-Alpes'"
 
     @output
     @render.ui
@@ -271,6 +301,8 @@ def server(input, output, session):
             """
             <p><em><strong>Note :</strong> La surface indiquée pour l’éolien correspond à la surface totale mobilisée (espacement, sécurité), qui n’est pas entièrement artificialisée.</em></p>
             <p><em>Pour le solaire, la surface correspond à une estimation plus proche de la surface réellement artificialisée au sol.</em></p>
+            <p style="opacity:.8"><em>Le pourcentage affiché est calculé par rapport à une surface de référence de
+            <strong>69 711 km²</strong> (Région Auvergne-Rhône-Alpes).</em></p>
             """
         )
 

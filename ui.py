@@ -96,7 +96,8 @@ app_ui = ui.page_fluid(
                            ui.row(
                                ui.column(4, ui.div({"class": "metric"},
                                                    ui.h4("Réacteurs nucléaires"),
-                                                   ui.div({"class": "value"}, ui.output_text("nuke_value")))),
+                                                   ui.div({"class": "value"}, ui.output_text("nuke_value")),
+                                                   ui.tags.small(ui.output_text("nuke_pct_total")))),
                                ui.column(4, ui.div({"class": "metric"},
                                                    ui.h4("Grands barrages"),
                                                    ui.div({"class": "value"}, ui.output_text("hydro_value")))),
@@ -114,7 +115,7 @@ app_ui = ui.page_fluid(
                                                    ui.div({"class": "value"}, ui.output_text("solar_value")),
                                                    ui.tags.small(ui.output_text("solar_surface")))),
                                ui.column(4, ui.div({"class": "metric"},
-                                                   ui.h4("Biomasse"),
+                                                   ui.h4("Centrales à Biomasse"),
                                                    ui.div({"class": "value"}, ui.output_text("bio_value")))),
                            ),
                            ui.div({"class": "mt-2"}, ui.output_ui("surface_info")),
