@@ -91,11 +91,12 @@ body{
 .card{
   background:var(--card); border-radius:14px; padding:16px 18px;
   box-shadow:0 10px 30px rgba(18,38,63,.08);
-  border:1px solid rgba(2,6,23,.05); margin-bottom:16px; color:var(--text);
+  border:1px solid rgba(2,6,23,.05); margin-bottom:18px; color:var(--text);
 }
 .card h3.section-title{
   margin:0 0 12px; font-weight:900; font-size:20px; letter-spacing:.2px;
 }
+
 
 /* --------- Metrics --------- */
 .metric{
@@ -133,20 +134,20 @@ body{
 
 /* === Fix visibilité des onglets actifs === */
 
-/* Thème CLAIR : fond pâle + texte bleu foncé */
+/* Thème CLAIR */
 .theme-light .nav-tabs .nav-link {
   color: #0B162C;              /* texte des onglets inactifs */
 }
 .theme-light .nav-tabs .nav-link.active,
 .theme-light .nav-tabs .nav-link.active:hover,
 .theme-light .nav-tabs .nav-link.active:focus {
-  background: #E9F2FF;         /* bleu très pâle */
-  color: #0B162C !important;    /* *** le libellé reste visible *** */
+  background: #E9F2FF;        
+  color: #0B162C !important; 
   border: 1px solid rgba(31,111,235,.35);
   box-shadow: 0 6px 18px rgba(31,111,235,.18);
 }
 
-/* Thème SOMBRE : fond bleu marqué + texte blanc (contraste) */
+/* Thème SOMBRE */
 .theme-dark .nav-tabs .nav-link { color: #F8FAFC; }
 .theme-dark .nav-tabs .nav-link.active,
 .theme-dark .nav-tabs .nav-link.active:hover,
@@ -156,3 +157,118 @@ body{
   border-color: transparent;
   box-shadow: 0 6px 18px var(--ring);
 }
+
+/* === Metrics re-style: taille + contraste + accents === */
+
+/* Variables utiles */
+:root.theme-light{
+  --metric-bg:#ffffff;
+  --metric-border:rgba(2,6,23,.10);
+  --metric-shadow:0 10px 28px rgba(18,38,63,.10);
+}
+:root.theme-dark{
+  --metric-bg:#161B22;
+  --metric-border:rgba(148,163,184,.18);
+  --metric-shadow:0 12px 34px rgba(0,0,0,.38);
+}
+
+/* Carte métrique par défaut */
+.metric{
+  position:relative;
+  display:flex; flex-direction:column; gap:8px;
+  --metric-accent: var(--brand);
+  --metric-veil: transparent;
+  background: linear-gradient(0deg, var(--metric-veil), var(--metric-veil)), var(--metric-bg);
+  color:var(--text);
+  border-left:6px solid var(--metric-accent);
+  border:1px solid var(--metric-border);
+  border-radius:16px;
+  padding:18px 20px;            /* taille par défaut */
+  min-height:132px;
+  box-shadow: var(--metric-shadow);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.metric:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(18,38,63,.16);
+}
+.theme-dark .metric:hover{
+  box-shadow: 0 18px 42px rgba(0,0,0,.55);
+}
+
+/* Tailles alternatives */
+.metric--compact{ padding:14px 16px; min-height:110px; }
+.metric--spacious{ padding:24px 26px; min-height:150px; }
+
+/* Typo */
+.metric h4{
+  font-size:13px; margin:0;
+  color:var(--muted); font-weight:900;
+  text-transform:uppercase; letter-spacing:.4px;
+}
+.metric .value{ font-size:32px; font-weight:900; color:var(--text); line-height:1; }
+.metric small{ color:var(--muted); opacity:.95; }
+
+/* Accents (couleur + voile subtil) */
+.metric.accent-blue   { --metric-accent:#1F6FEB; --metric-veil:rgba(31,111,235,.06); }
+.metric.accent-green  { --metric-accent:#2EA043; --metric-veil:rgba(46,160,67,.07); }
+.metric.accent-orange { --metric-accent:#F97316; --metric-veil:rgba(249,115,22,.07); }
+.metric.accent-neutral{ --metric-accent:#64748B; --metric-veil:rgba(100,116,139,.06); }
+.metric.accent-cyan   { --metric-accent:#06B6D4; --metric-veil:rgba(6,182,212,.08); }
+.metric.accent-yellow { --metric-accent:#EAB308; --metric-veil:rgba(234,179,8,.10); }
+
+/* En sombre, voile un peu plus présent pour ressortir */
+.theme-dark .metric.accent-blue   { --metric-veil:rgba(88,166,255,.08); }
+.theme-dark .metric.accent-green  { --metric-veil:rgba(46,160,67,.10); }
+.theme-dark .metric.accent-orange { --metric-veil:rgba(249,115,22,.10); }
+.theme-dark .metric.accent-neutral{ --metric-veil:rgba(148,163,184,.10); }
+.theme-dark .metric.accent-cyan   { --metric-veil:rgba(56,189,248,.16); }
+.theme-dark .metric.accent-yellow { --metric-veil:rgba(234,179,8,.18); }
+
+/* === Même hauteur pour toutes les cartes .metric === */
+:root{
+  /* ajuste ici si tu veux des cartes plus hautes/basses */
+  --metric-height-sm: 150px;   /* mobile / petit écran */
+  --metric-height-lg: 170px;   /* ≥ 992px */
+}
+
+.metric{
+  height: var(--metric-height-sm);
+  min-height: var(--metric-height-sm);
+}
+
+/* un peu plus haut sur grand écran */
+@media (min-width: 992px){
+  .metric{
+    height: var(--metric-height-lg);
+    min-height: var(--metric-height-lg);
+  }
+}
+
+/* garder une mise en page propre dans la carte */
+.metric .value{ 
+  font-size: clamp(22px, 2.2vw, 32px);
+  line-height: 1;
+}
+.metric small{
+  margin-top: auto;           /* colle le small en bas de la carte */
+  display: block;
+  overflow-wrap: anywhere;    /* évite les débordements */
+}
+
+/* === FORCE accents (cyan & yellow) + fond teinté, toutes priorités === */
+.metric.accent-cyan{
+  --metric-accent:#06B6D4 !important;
+  --metric-veil:rgba(6,182,212,.10) !important;
+}
+.metric.accent-yellow{
+  --metric-accent:#EAB308 !important;
+  --metric-veil:rgba(234,179,8,.12) !important;
+}
+.theme-dark .metric.accent-cyan{
+  --metric-veil:rgba(56,189,248,.22) !important;
+}
+.theme-dark .metric.accent-yellow{
+  --metric-veil:rgba(250,204,21,.24) !important;
+}
+
