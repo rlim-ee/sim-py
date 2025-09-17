@@ -1,4 +1,4 @@
-# server.py — Simulations + Europe (RDS) + thème clair/sombre
+# server.py — complet (jointure avec europe_map.rds + centroïdes pour cercles)
 from __future__ import annotations
 
 from shiny import App, reactive, render, ui
@@ -8,53 +8,61 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import pyreadr
+import os
 
-# --- RDS (dc_europe.rds)
+# Essayez d'utiliser shapely pour lire la géométrie WKT -> GeoJSON
 try:
-    import pyreadr
-except Exception:  # pragma: no cover
-    pyreadr = None
+    from shapely import wkt as shp_wkt
+    from shapely.geometry import mapping
+    SHAPELY_OK = True
+except Exception:
+    SHAPELY_OK = False
 
-# ============================
-# Import UI
-# ============================
 from ui import app_ui
 
+# ------------------------- utilitaires -------------------------
+AURA_KM2 = 69_711
+NUC_TOTAL_FR = 56
 
-# ============================
-# Utilitaires / thème
-# ============================
-def is_dark_input(input) -> bool:
-    """Renvoie True si l'utilisateur a choisi le mode sombre (radio id='theme_mode')."""
+def fmt_int(n: float | int) -> str:
     try:
-        return (input.theme_mode() or "dark") == "dark"
+        return f"{int(round(n)):,}".replace(",", " ")
     except Exception:
-        return False
+        try:
+            return f"{n:,}".replace(",", " ")
+        except Exception:
+            return str(n)
 
+def _safe_read_rds(path: str) -> pd.DataFrame | None:
+    try:
+        if os.path.exists(path):
+            res = pyreadr.read_r(path)
+            return next(iter(res.values())).copy()
+    except Exception:
+        pass
+    return None
 
-# ============================
-# Données de base — Simulation 1
-# ============================
+# ------------------------- données Simu 1/2 -------------------------
 consommation_actuelle = 442  # TWh (2025)
 
 dc_data = pd.DataFrame({
     "Annee": [2025, 2026, 2028, 2035],
-    "Conso": [0.131400, 1.752000, 3.504000, 8.760000],  # TWh par DC
+    "Conso": [0.131400, 1.752000, 3.504000, 8.760000],
 })
 
 production_data = pd.DataFrame({
     "Annee": [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035],
-    "Min":   [538,   550,   560,   565,   568,   570,   572,   575,   578,   580,   585],
-    "Max":   [538,   570,   580,   590,   595,   600,   610,   615,   620,   628,   636],
-    "Ref":   [538,   560,   570,   577.5, 581.5, 585,   591,   595,   599,   604,   610.5],
+    "Min":   [538, 550, 560, 565, 568, 570, 572, 575, 578, 580, 585],
+    "Max":   [538, 570, 580, 590, 595, 600, 610, 615, 620, 628, 636],
+    "Ref":   [538, 560, 570, 577.5, 581.5, 585, 591, 595, 599, 604, 610.5],
 })
 
 consommation_data = pd.DataFrame({
     "Annee": [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035],
-    "Ref":   [442,  455,  468,  481,  494,  508,  514,  520,  526,  532,  538],
+    "Ref":   [442, 455, 468, 481, 494, 508, 514, 520, 526, 532, 538],
 })
 
-# Tendances 2000–2050
 conso_hist = pd.DataFrame({
     "Annee": [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024],
     "Conso": [425,434,434,449,460,464,468,467,481,472,499,472,487,495,463,474,482,481,477,472,449,472,454,439,442],
@@ -63,8 +71,7 @@ conso_p = pd.DataFrame({
     "Annee": list(range(2025, 2051)),
     "Ref":   [442,455,468,481,494,508,514,520,526,532,538,544,550,556,562,568,574,580,586,592,598,604,610,616,622,628],
 })
-n = len(conso_p)
-delta = np.linspace(0, 50, n)
+delta = np.linspace(0, 50, len(conso_p))
 conso_p["Min"] = (conso_p["Ref"] - delta).round(1)
 conso_p["Max"] = (conso_p["Ref"] + delta).round(1)
 
@@ -79,147 +86,87 @@ prod_p = pd.DataFrame({
     "Ref":   [538,560,570,577.5,581.5,585,591,595,599,604,610.5,617.5,625,632.5,642.5,652.5,662.5,672.5,682.5,692.5,700,705,710,715,720,725],
 })
 
+# ------------------------- DC Europe -------------------------
+DC_RDS = "data/dc_europe.rds"
+MAP_RDS = "data/europe_map.rds"
 
-# ============================
-# Données — Simulation 2
-# ============================
-consommation_habitants = pd.DataFrame({
-    "Pays": [
-        "Mondial", "France (68,29 M)", "Qatar (2,66 M)", "Mali (28,24 M)",
-        "Etats-Unis (340,1 M)", "Chine (1 411,41 M)", "Inde (1438,60 M)", "Russie (143,8 M)"
-    ],
-    "Conso_MWh": [2.674, 2.223, 226.848, 0.173, 12.705, 6.113, 1.395, 6.961],
-})
-autres_pays = consommation_habitants[consommation_habitants["Pays"] != "Mondial"].copy().sort_values("Pays")
-consommation_habitants = pd.concat(
-    [consommation_habitants[consommation_habitants["Pays"] == "Mondial"], autres_pays],
-    ignore_index=True
-)
+dc_eu = _safe_read_rds(DC_RDS)
+if dc_eu is None:
+    dc_eu = pd.DataFrame(columns=["name", "nb_dc", "pop"])
 
-dc_paliers = pd.DataFrame({
-    "Nom": ["15 MW", "200 MW", "400 MW", "1 GW"],
-    "Puissance_MW": [15, 200, 400, 1000],
-})
-dc_paliers["Conso_MWh_An"] = dc_paliers["Puissance_MW"] * 24 * 365
-
-palette_colors = ["#60CCEC", "#FEE552", "#A1C740", "#E75C38", "#FB7A25", "#084C64", "#720019", "#226D68"]
-dc_1gw_conso = 8_760_000  # MWh/an
-
-
-# ============================
-# Europe — chargement RDS
-# ============================
-def load_dc_europe_df(path: str) -> pd.DataFrame:
-    if pyreadr is None:
-        raise RuntimeError("Le module 'pyreadr' n'est pas installé. Fais: pip install pyreadr")
-
-    res = pyreadr.read_r(path)
-    df = next(iter(res.values()))
-
-    # Harmoniser -> Country, nb_dc, pop
-    colmap = {
-        "name": "Country", "pays": "Country", "country": "Country",
-        "nb_dc": "nb_dc", "dc_count": "nb_dc",
-        "pop": "pop", "population": "pop",
-        "country_id": "iso2",
-    }
-    for k, v in colmap.items():
-        if k in df.columns and v not in df.columns:
-            df.rename(columns={k: v}, inplace=True)
-
-    for c in ["nb_dc", "pop"]:
-        if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
-
-    # Indicateurs dérivés
-    if "dc_per_million" not in df.columns and {"nb_dc", "pop"}.issubset(df.columns):
-        df["dc_per_million"] = df["nb_dc"] / (df["pop"] / 1_000_000)
-
-    if "Share" not in df.columns and "nb_dc" in df.columns:
-        total = float(df["nb_dc"].sum())
-        df["Share"] = (df["nb_dc"] / total) * 100.0
-
-    # Taille (utile si plus tard tu ajoutes lat/lon)
-    if "nb_dc" in df.columns:
-        df["radius"] = np.sqrt(df["nb_dc"].astype(float)).fillna(0) * 4 + 4
-
-    return df
-
-# --- Charger dc_europe.rds
-rds_path = "data/dc_europe.rds"
-res = pyreadr.read_r(rds_path)
-dc_eu = next(iter(res.values()))
-
-# Harmoniser les colonnes
-if "name" in dc_eu.columns and "Country" not in dc_eu.columns:
-    dc_eu.rename(columns={"name": "Country"}, inplace=True)
+# harmonisation minimale
+if "name" not in dc_eu.columns:
+    for c in ("Country", "country", "pays"):
+        if c in dc_eu.columns:
+            dc_eu.rename(columns={c: "name"}, inplace=True)
+            break
 if "nb_dc" not in dc_eu.columns:
-    raise ValueError("Le fichier RDS doit contenir une colonne 'nb_dc'.")
+    for c in ("nb", "count", "dc_count"):
+        if c in dc_eu.columns:
+            dc_eu.rename(columns={c: "nb_dc"}, inplace=True)
+            break
 if "pop" not in dc_eu.columns:
-    raise ValueError("Le fichier RDS doit contenir une colonne 'pop' (population en habitants).")
+    for c in ("population", "Population", "pop_total"):
+        if c in dc_eu.columns:
+            dc_eu.rename(columns={c: "pop"}, inplace=True)
+            break
 
-# --- ISO-2 -> ISO-3 (selon country_id)
-iso2_to_iso3 = {
-    "AT":"AUT","BE":"BEL","BG":"BGR","CY":"CYP","CZ":"CZE","DE":"DEU","DK":"DNK","CH":"CHE",
-    "FI":"FIN","FR":"FRA","EE":"EST","EL":"GRC","GR":"GRC","ES":"ESP","IE":"IRL","HR":"HRV",
-    "HU":"HUN","IT":"ITA","NL":"NLD","LT":"LTU","LU":"LUX","LV":"LVA","MT":"MLT","NO":"NOR",
-    "PL":"POL","PT":"PRT","RO":"ROU","SE":"SWE","SI":"SVN","SK":"SVK","TR":"TUR","UA":"UKR",
-    "GB":"GBR","UK":"GBR","IS":"ISL","AL":"ALB","BA":"BIH","MK":"MKD","RS":"SRB","MD":"MDA",
-    "BY":"BLR"
-}
-if "iso" not in dc_eu.columns:
-    if "country_id" in dc_eu.columns:
-        dc_eu["iso"] = dc_eu["country_id"].map(iso2_to_iso3)
-    else:
-        # si pas de country_id, on laisse iso absent (on pourra quand même buller)
-        pass
+for c in ("nb_dc", "pop"):
+    if c in dc_eu.columns:
+        dc_eu[c] = pd.to_numeric(dc_eu[c], errors="coerce")
 
-# --- Centroïdes (lat/lon) par ISO-3 (approx.)
-centroids = pd.DataFrame([
-    ("AUT", 47.516, 14.550), ("BEL", 50.833,   4.000), ("BGR", 42.733, 25.485),
-    ("CYP", 35.126, 33.430), ("CZE", 49.817, 15.473), ("DEU", 51.165, 10.451),
-    ("DNK", 56.263,  9.501), ("CHE", 46.818,  8.227), ("FIN", 61.924, 25.748),
-    ("FRA", 46.227,  2.213), ("EST", 58.595, 25.013), ("GRC", 39.074, 21.824),
-    ("ESP", 40.463, -3.749), ("IRL", 53.142, -7.692), ("HRV", 45.100, 15.200),
-    ("HUN", 47.162, 19.503), ("ITA", 41.871, 12.567), ("NLD", 52.132,  5.291),
-    ("POL", 51.919, 19.145), ("PRT", 39.399, -8.224), ("ROU", 45.943, 24.966),
-    ("SWE", 60.128, 18.643), ("NOR", 60.472,  8.468), ("LTU", 55.169, 23.881),
-    ("LVA", 56.879, 24.603), ("LUX", 49.815,  6.129), ("MLT", 35.937, 14.375),
-    ("SVN", 46.152, 14.995), ("SVK", 48.669, 19.699), ("TUR", 38.963, 35.243),
-    ("UKR", 48.379, 31.165), ("GBR", 55.378, -3.436), ("ISL", 64.963,-19.020),
-    ("ALB", 41.153, 20.168), ("BIH", 43.915, 17.679), ("MKD", 41.608, 21.745),
-    ("SRB", 44.016, 21.006), ("MDA", 47.411, 28.369), ("BLR", 53.709, 27.953)
-], columns=["iso","lat","lon"])
-
-if "iso" in dc_eu.columns:
-    dc_eu = dc_eu.merge(centroids, on="iso", how="left")
-
-# Métriques dérivées
-if "dc_per_million" not in dc_eu.columns and {"nb_dc","pop"}.issubset(dc_eu.columns):
+if {"nb_dc", "pop"}.issubset(dc_eu.columns):
     dc_eu["dc_per_million"] = dc_eu["nb_dc"] / (dc_eu["pop"] / 1_000_000)
 
-# Taille des cercles (racine pour rester lisible)
+# --- Lecture du fond "europe_map.rds" et conversion GeoJSON + centroïdes
+emap_geojson = None
+emap_centroids = None
+emap_raw = _safe_read_rds(MAP_RDS)
+
+if SHAPELY_OK and emap_raw is not None and {"name", "geometry"}.issubset(emap_raw.columns):
+    emap = emap_raw[["name", "geometry"]].dropna().copy()
+
+    def _load_geom(wkt_str):
+        try:
+            return shp_wkt.loads(str(wkt_str))
+        except Exception:
+            return None
+
+    emap["geom"] = emap["geometry"].apply(_load_geom)
+    emap = emap[emap["geom"].notnull()].copy()
+
+    # centroïdes pour les cercles
+    emap["lon"] = emap["geom"].apply(lambda g: float(g.centroid.x))
+    emap["lat"] = emap["geom"].apply(lambda g: float(g.centroid.y))
+    emap_centroids = emap[["name", "lat", "lon"]].copy()
+
+    # GeoJSON feature collection (featureid = name)
+    features = []
+    for _, r in emap.iterrows():
+        try:
+            features.append({
+                "type": "Feature",
+                "id": r["name"],
+                "properties": {"name": r["name"]},
+                "geometry": mapping(r["geom"])
+            })
+        except Exception:
+            continue
+    if features:
+        emap_geojson = {"type": "FeatureCollection", "features": features}
+
+# merge des centroïdes si disponibles
+if emap_centroids is not None and "name" in dc_eu.columns:
+    dc_eu = dc_eu.merge(emap_centroids, on="name", how="left")
+
+# rayon pour les cercles
 if "nb_dc" in dc_eu.columns:
-    dc_eu["radius"] = np.sqrt(dc_eu["nb_dc"].astype(float)).fillna(0) * 4 + 4
+    dc_eu["radius"] = np.sqrt(dc_eu["nb_dc"].clip(lower=0).fillna(0)) * 4 + 4
 
-
-
-# ============================
-# SERVER
-# ============================
+# ------------------------- serveur -------------------------
 def server(input, output, session):
 
-    # ---- DF Europe (RDS)
-    rds_path = "data/dc_europe.rds"
-    dc_eu_val = reactive.Value(load_dc_europe_df(rds_path))
-
-    @reactive.calc
-    def dc_eu():
-        return dc_eu_val.get()
-
-    # ======================================================
-    # Simulation 1
-    # ======================================================
+    # ====== Simulation 1 ======
     @reactive.calc
     def consommation_totale():
         nb_dc = input.nb_dc()
@@ -232,7 +179,6 @@ def server(input, output, session):
     def facteur_charge_affiche():
         return f"⚙️ Facteur de charge appliqué : {input.facteur_charge()} %"
 
-    # ---- Tendances 2000–2050
     @output
     @sw.render_widget
     def energiePlot():
@@ -260,26 +206,24 @@ def server(input, output, session):
                 y=list(d["ymax"]) + list(d["ymin"][::-1]),
                 fill="toself", mode="none", fillcolor=color, hoverinfo="skip", name=f"Zone {typ}"
             ))
-        for typ, line_color in [("Consommation", "#0072B2"), ("Production", "#009E73")]:
+        for typ, col in [("Consommation", "#0072B2"), ("Production", "#009E73")]:
             d = data_lines[data_lines["Type"] == typ]
             fig.add_trace(go.Scatter(x=d["Annee"], y=d["Value"], mode="lines", name=typ,
-                                     line=dict(color=line_color, width=2)))
-
+                                     line=dict(color=col, width=2)))
         fig.add_vline(x=2025, line_dash="dash", line_color="gray")
         fig.add_vline(x=2035, line_dash="dash", line_color="gray")
         fig.update_layout(height=420, margin=dict(l=10,r=10,t=30,b=10), legend_title_text="",
                           xaxis_title=None, yaxis_title="TWh")
         return fig
 
-    # ---- Graphique principal (2025–2035)
     @output
     @sw.render_widget
     def energy_plot():
         conso_tot = consommation_totale()
+        nb_dc = input.nb_dc()
         conso_sub = conso_p[(conso_p["Annee"] >= 2025) & (conso_p["Annee"] <= 2035)]
 
         p = go.Figure()
-        # Production
         p.add_trace(go.Scatter(
             x=list(production_data["Annee"]) + list(production_data["Annee"][::-1]),
             y=list(production_data["Max"])   + list(production_data["Min"][::-1]),
@@ -294,7 +238,7 @@ def server(input, output, session):
         p.add_trace(go.Scatter(x=production_data["Annee"], y=production_data["Max"], mode="lines",
                                line=dict(color="#009E73", width=2, dash="dash"),
                                name="Projection de production maximum de référence"))
-        # Consommation
+
         p.add_trace(go.Scatter(x=consommation_data["Annee"], y=consommation_data["Ref"], mode="lines",
                                line=dict(color="#0072B2", width=4), name="Projection de consommation de référence"))
         p.add_trace(go.Scatter(
@@ -303,24 +247,22 @@ def server(input, output, session):
             fill="toself", mode="none", fillcolor="rgba(34,109,104,0.2)",
             line=dict(color="rgba(0,0,0,0)"), name="Zone de consommation", hoverinfo="skip"
         ))
-        # Points simulés
         p.add_trace(go.Scatter(
             x=conso_tot["Annee"], y=conso_tot["Conso_Totale"], mode="markers+text",
             text=conso_tot["Annee"], textposition="top center",
             marker=dict(color="#D46F4D", size=14, symbol="diamond-open-dot", line=dict(color="#D46F4D", width=3)),
-            name="Consommation simulée : Consommation 2024 + conso DC par palier",
+            name=f"Consommation simulée : Consommation 2024 + consommation de {nb_dc} DC par palier",
             hovertemplate="<b>Consommation simulée</b><br>Année: %{x}<br>Consommation: %{y:.1f} TWh/an<extra></extra>"
         ))
         p.update_layout(
-            xaxis=dict(title="Année", showgrid=True, gridcolor="#e9ecef", tickmode="linear", dtick=1, tickfont=dict(size=12)),
-            yaxis=dict(title="Énergie (TWh/an)", showgrid=True, gridcolor="#e9ecef", tickfont=dict(size=12)),
-            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center", font=dict(size=12)),
-            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff", hovermode="closest",
+            xaxis=dict(title="Année", showgrid=True, gridcolor="#e9ecef", tickmode="linear", dtick=1),
+            yaxis=dict(title="Énergie (TWh/an)", showgrid=True, gridcolor="#e9ecef"),
+            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
             margin=dict(t=20, r=40, b=100, l=60), height=460,
         )
         return p
 
-    # ---- Infos
     @render.text
     def info_conso_dc():
         nb_dc = input.nb_dc()
@@ -336,11 +278,7 @@ def server(input, output, session):
         conso_totale_2035 = consommation_actuelle + conso_dc_2035
         return f"{conso_totale_2035:.0f} TWh"
 
-    # ---- Équivalents 2035
-    energy_per_dc_gwh = 8700  # GWh par DC
-
-    AURA_KM2 = 67_711 
-    N_REACTEURS_FR = 56
+    energy_per_dc_gwh = 8700
 
     @render.text
     def wind_surface():
@@ -350,7 +288,7 @@ def server(input, output, session):
         nb_eoliennes = total_gwh / production_par_eolienne_gwh
         surface_km2 = nb_eoliennes * surface_par_eolienne_km2
         pct_fr = (surface_km2 / AURA_KM2) * 100
-        return f"≈ {surface_km2:,.2f} km² occupés — soit {pct_fr:.2f} % de la surface de l'Auvergne-Rhône-Alpes".replace(",", " ")
+        return f"≈ {surface_km2:,.2f} km² — soit {pct_fr:.3f} % de la surface de la France".replace(",", " ")
 
     @render.text
     def solar_surface():
@@ -362,26 +300,17 @@ def server(input, output, session):
         nb_inst = total_twh / prod_par_install_twh
         surface_km2 = (nb_inst * taille_m2) / 1e6
         pct_fr = (surface_km2 / AURA_KM2) * 100
-        return f"≈ {surface_km2:,.2f} km² occupés — soit {pct_fr:.2f} % de l'Auvergne-Rhône-Alpes".replace(",", " ")
+        return f"≈ {surface_km2:,.2f} km² — soit {pct_fr:.3f} % de la surface de la France".replace(",", " ")
 
     @output
     @render.ui
     def surface_info():
-        return ui.HTML(
-            """
+        return ui.HTML("""
             <p><em><strong>Note :</strong> La surface indiquée pour l'éolien correspond à la surface totale mobilisée (espacement, sécurité), qui n'est pas entièrement artificialisée.</em></p>
             <p><em>Pour le solaire, la surface correspond à une estimation plus proche de la surface réellement artificialisée au sol.</em></p>
-            """
-        )
+        """)
 
-    capacities = {
-        "nuke": 8.2,       # TWh/an par réacteur
-        "hydro": 1.5,      # TWh/an par barrage
-        "wind": 0.004,     # TWh/an par éolienne
-        "solar": 0.00004,  # TWh/an par installation PV
-        "coal": 3.0,       # TWh/an par centrale
-        "bio": 0.1,        # TWh/an par centrale
-    }
+    capacities = {"nuke": 8.2, "hydro": 1.5, "wind": 0.004, "solar": 0.00004, "coal": 3.0, "bio": 0.1}
 
     def calculate_equivalent(source: str) -> int:
         nb_dc = input.nb_dc() or 1
@@ -390,87 +319,85 @@ def server(input, output, session):
         return int(round(conso_2035_twh / capacities[source]))
 
     @render.text
-    def nuke_value():  return f"{calculate_equivalent('nuke'):,}".replace(",", " ")
-
+    def nuke_value():  return fmt_int(calculate_equivalent("nuke"))
     @render.text
-    def hydro_value(): return f"{calculate_equivalent('hydro'):,}".replace(",", " ")
-
+    def hydro_value(): return fmt_int(calculate_equivalent("hydro"))
     @render.text
-    def coal_value():  return f"{calculate_equivalent('coal'):,}".replace(",", " ")
-
+    def coal_value():  return fmt_int(calculate_equivalent("coal"))
     @render.text
-    def wind_value():  return f"{calculate_equivalent('wind'):,}".replace(",", " ")
-
+    def wind_value():  return fmt_int(calculate_equivalent("wind"))
     @render.text
-    def solar_value(): return f"{calculate_equivalent('solar'):,}".replace(",", " ")
-
+    def solar_value(): return fmt_int(calculate_equivalent("solar"))
     @render.text
-    def bio_value():   return f"{calculate_equivalent('bio'):,}".replace(",", " ")
+    def bio_value():   return fmt_int(calculate_equivalent("bio"))
 
     @render.text
     def nuke_pct_total():
         nuke_eq = calculate_equivalent("nuke")
-        pct = (nuke_eq / N_REACTEURS_FR) * 100
-        return f"{nuke_eq} au total — soit {pct:.2f} % du nombre total"
+        pct = min(100.0, (nuke_eq / NUC_TOTAL_FR) * 100.0)
+        return f"sur {NUC_TOTAL_FR} réacteurs en France — soit {pct:.1f} % du total"
 
-    # ======================================================
-    # Simulation 2
-    # ======================================================
+    # ====== Simulation 2 ======
+    consommation_habitants = pd.DataFrame({
+        "Pays": [
+            "Mondial", "France (68,29 M)", "Qatar (2,66 M)", "Mali (28,24 M)",
+            "Etats-Unis (340,1 M)", "Chine (1 411,41 M)", "Inde (1438,60 M)", "Russie (143,8 M)"
+        ],
+        "Conso_MWh": [2.674, 2.223, 226.848, 0.173, 12.705, 6.113, 1.395, 6.961],
+    })
+    autres_pays = consommation_habitants[consommation_habitants["Pays"] != "Mondial"].copy().sort_values("Pays")
+    consommation_habitants = pd.concat(
+        [consommation_habitants[consommation_habitants["Pays"] == "Mondial"], autres_pays],
+        ignore_index=True
+    )
+
+    dc_paliers = pd.DataFrame({
+        "Nom": ["15 MW", "200 MW", "400 MW", "1 GW"],
+        "Puissance_MW": [15, 200, 400, 1000],
+    })
+    dc_paliers["Conso_MWh_An"] = dc_paliers["Puissance_MW"] * 24 * 365
+
+    palette_colors = ["#60CCEC", "#FEE552", "#A1C740", "#E75C38", "#FB7A25", "#084C64", "#720019", "#226D68"]
+    dc_1gw_conso = 8_760_000  # MWh/an
+
     @render.text
     def france_1gw():
-        france_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"
-        ].values
-        return f"{int(round(dc_1gw_conso / france_mwh[0])):,}".replace(",", " ") if len(france_mwh) else ""
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"].values
+        return fmt_int(dc_1gw_conso / v[0]) if len(v) else ""
 
     @render.text
     def qatar_1gw():
-        qatar_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"
-        ].values
-        return f"{int(round(dc_1gw_conso / qatar_mwh[0])):,}".replace(",", " ") if len(qatar_mwh) else ""
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"].values
+        return fmt_int(dc_1gw_conso / v[0]) if len(v) else ""
 
     @render.text
     def mali_1gw():
-        mali_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"
-        ].values
-        return f"{int(round(dc_1gw_conso / mali_mwh[0])):,}".replace(",", " ") if len(mali_mwh) else ""
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"].values
+        return fmt_int(dc_1gw_conso / v[0]) if len(v) else ""
 
     @render.text
     def france_pop(): return "Population totale : 68 290 000"
-
     @render.text
     def qatar_pop():  return "Population totale : 2 660 000"
-
     @render.text
     def mali_pop():   return "Population totale : 28 243 609"
 
     @render.text
     def france_pct():
-        france_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"
-        ].values
-        habitants = dc_1gw_conso / france_mwh[0]
-        pct = round(habitants / 68_290_000 * 100, 2)
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"].values
+        hab = dc_1gw_conso / v[0]; pct = round(hab / 68_290_000 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @render.text
     def qatar_pct():
-        qatar_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"
-        ].values
-        habitants = dc_1gw_conso / qatar_mwh[0]
-        pct = round(habitants / 2_660_000 * 100, 2)
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"].values
+        hab = dc_1gw_conso / v[0]; pct = round(hab / 2_660_000 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @render.text
     def mali_pct():
-        mali_mwh = consommation_habitants.loc[
-            consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"
-        ].values
-        habitants = dc_1gw_conso / mali_mwh[0]
-        pct = round(habitants / 28_243_609 * 100, 2)
+        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"].values
+        hab = dc_1gw_conso / v[0]; pct = round(hab / 28_243_609 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @output
@@ -487,12 +414,12 @@ def server(input, output, session):
     @sw.render_widget
     def barplot():
         sel = input.pays_selection() or ["Mondial"]
-        selected_data = consommation_habitants[consommation_habitants["Pays"].isin(sel)].copy()
-        if selected_data.empty:
+        selected = consommation_habitants[consommation_habitants["Pays"].isin(sel)].copy()
+        if selected.empty:
             return px.bar(title="Sélectionnez au moins un profil")
 
         comparison = (
-            selected_data.assign(key=1)
+            selected.assign(key=1)
             .merge(dc_paliers.assign(key=1), on="key")
             .drop(columns=["key"])
         )
@@ -503,31 +430,23 @@ def server(input, output, session):
 
         max_val = float(comparison["Habitants_equivalents"].max())
         if max_val >= 1e6:
-            scale_factor, y_title, hover_suffix = 1e6, "Nombre d'habitants équivalents (en millions)", " millions"
+            scale, y_title, suf = 1e6, "Nombre d'habitants équivalents (en millions)", " millions"
         elif max_val >= 1e3:
-            scale_factor, y_title, hover_suffix = 1e3, "Nombre d'habitants équivalents (en milliers)", " milliers"
+            scale, y_title, suf = 1e3, "Nombre d'habitants équivalents (en milliers)", " milliers"
         else:
-            scale_factor, y_title, hover_suffix = 1, "Nombre d'habitants équivalents", ""
-        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale_factor
+            scale, y_title, suf = 1, "Nombre d'habitants équivalents", ""
+        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale
 
-        unique_pays = list(dict.fromkeys(comparison["NomPays"]))
-        colors = {p: palette_colors[i % len(palette_colors)] for i, p in enumerate(unique_pays)}
+        uniq = list(dict.fromkeys(comparison["NomPays"]))
+        colors = {p: palette_colors[i % len(palette_colors)] for i, p in enumerate(uniq)}
 
-        fig = px.bar(
-            comparison, x="DC", y="Habitants_equivalents_scaled", color="NomPays",
-            color_discrete_map=colors, title="Nombre d'habitants équivalents par palier"
-        )
+        fig = px.bar(comparison, x="DC", y="Habitants_equivalents_scaled", color="NomPays",
+                     color_discrete_map=colors, title="Nombre d'habitants équivalents par palier")
         fig.update_layout(xaxis_title="Paliers de puissance du Data Center de Eybens",
                           yaxis_title=y_title, barmode="group", height=460)
-        fig.update_traces(
-            hovertemplate="Profil : %{legendgroup}<br>Palier : %{x}<br>"
-            "Habitants équivalents : %{y:,.2f}"
-            + hover_suffix +
-            "<extra></extra>"
-            )
+        fig.update_traces(hovertemplate=f"Profil : %{legendgroup}<br>Palier : %{x}<br>Habitants équivalents : %{y:,.2f}{suf}<extra></extra>")
         return fig
 
-    # Perso (2 entrées modifiables dans l'UI)
     def _collect_personal_entries():
         rows = []
         for i in (1, 2):
@@ -548,12 +467,12 @@ def server(input, output, session):
     @output
     @sw.render_widget
     def barplot_personalisee():
-        custom_data = _collect_personal_entries()
-        if custom_data.empty:
+        custom = _collect_personal_entries()
+        if custom.empty:
             return px.bar(title="Ajoutez des entrées dans la sidebar")
 
         comparison = (
-            custom_data.assign(key=1)
+            custom.assign(key=1)
             .merge(dc_paliers.assign(key=1), on="key")
             .drop(columns=["key"])
         )
@@ -562,126 +481,128 @@ def server(input, output, session):
 
         max_val = float(comparison["Habitants_equivalents"].max())
         if max_val >= 1e6:
-            scale_factor, y_title, hover_suffix = 1e6, "Nombre d'individus équivalents (en millions)", " millions"
+            scale, y_title, suf = 1e6, "Nombre d'individus équivalents (en millions)", " millions"
         elif max_val >= 1e3:
-            scale_factor, y_title, hover_suffix = 1e3, "Nombre d'individus équivalents (en milliers)", " milliers"
+            scale, y_title, suf = 1e3, "Nombre d'individus équivalents (en milliers)", " milliers"
         else:
-            scale_factor, y_title, hover_suffix = 1, "Nombre d'individus équivalents", ""
-        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale_factor
+            scale, y_title, suf = 1, "Nombre d'individus équivalents", ""
+        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale
 
         fig = px.bar(comparison, x="DC", y="Habitants_equivalents_scaled", color="Pays",
                      title="Nombre d'individus équivalents — projections Data One")
         fig.update_layout(xaxis_title="Paliers de puissance du Data Center de Eybens",
                           yaxis_title=y_title, barmode="group", height=420)
-        fig.update_traces(
-            hovertemplate="Nom : %{legendgroup}<br>Palier : %{x}<br>"
-            "Habitants équivalents : %{y:,.2f}"
-            + hover_suffix +
-            "<extra></extra>"
-            )
+        fig.update_traces(hovertemplate=f"Nom : %{legendgroup}<br>Palier : %{x}<br>Habitants équivalents : %{y:,.2f}{suf}<extra></extra>")
         return fig
 
-    # ======================================================
-    # Europe — carte + barres + évolution
-    # ======================================================
+    # ====== DC en Europe (jointure fond + cercles centroïdes) ======
     @output
     @sw.render_widget
     def eu_map():
         df = dc_eu.copy()
 
-        fig = go.Figure()
+        if emap_geojson is not None and "dc_per_million" in df.columns and "name" in df.columns:
+            # Choroplèthe par GeoJSON (clé = properties.name)
+            fig = px.choropleth(
+                df, geojson=emap_geojson,
+                locations="name", featureidkey="properties.name",
+                color="dc_per_million", color_continuous_scale="Blues",
+                labels={"dc_per_million": "DC / million"}
+            )
+            fig.update_traces(marker_line_color="white", marker_line_width=0.6)
+            fig.update_geos(fitbounds="locations", projection_type="natural earth", visible=False)
+        else:
+            # Fallback (noms de pays)
+            fig = go.Figure()
+            if {"name", "dc_per_million"}.issubset(df.columns):
+                fig.add_trace(go.Choropleth(
+                    locations=df["name"], locationmode="country names",
+                    z=df["dc_per_million"], colorscale="Blues",
+                    marker_line_color="white", marker_line_width=0.6,
+                    colorbar_title="DC / million",
+                    hovertemplate="<b>%{location}</b><br>DC / million : %{z:.2f}<extra></extra>"
+                ))
+            fig.update_geos(scope="europe", projection_type="natural earth",
+                            showcountries=True, countrycolor="white",
+                            showland=True, landcolor="#f0f2f5")
 
-        # Choroplèthe "DC par million d'hab." si ISO disponible
-        if "iso" in df.columns and "dc_per_million" in df.columns:
-            fig.add_trace(go.Choropleth(
-                locations=df["iso"], z=df["dc_per_million"], locationmode="ISO-3",
-                colorscale="Blues", showscale=True, colorbar_title="DC / million",
-                marker_line_color="white", marker_line_width=0.6,
-                customdata=np.stack([df.get("Country", df["iso"])], axis=-1),
-                hovertemplate="<b>%{customdata[0]}</b><br>DC / million : %{z:.2f}<extra></extra>"
-            ))
-
-        # Cercles proportionnels au nombre total de DC (si lat/lon dispos)
-        if {"lat","lon"}.issubset(df.columns):
+        # Cercles proportionnels (centroïdes si dispos / sinon lat/lon existants)
+        mask = df["nb_dc"].notna()
+        if "lat" in df.columns and "lon" in df.columns:
+            mask &= df["lat"].notna() & df["lon"].notna()
+        if mask.any():
+            d = df.loc[mask].copy()
+            if "radius" not in d.columns:
+                d["radius"] = np.sqrt(d["nb_dc"].clip(lower=0).fillna(0)) * 4 + 4
+            hover = (
+                "<b>" + d["name"].astype(str) + "</b><br>" +
+                "Nombre de DC : " + d["nb_dc"].fillna(0).astype(int).astype(str) + "<br>" +
+                "Population : " + d["pop"].fillna(0).astype(int).map(lambda x: f"{x:,}".replace(",", " ")) +
+                "<extra></extra>"
+            )
             fig.add_trace(go.Scattergeo(
-                lon=df["lon"], lat=df["lat"], mode="markers",
-                marker=dict(
-                    size=df["radius"], color="#FF7B72", opacity=0.70,
-                    line=dict(width=0.8, color="white")
-                ),
-                name="Nombre total de DC",
-                customdata=np.stack([df.get("Country", df.get("iso", "")), df["nb_dc"]], axis=-1),
-                hovertemplate="<b>%{customdata[0]}</b><br>DC totaux : %{customdata[1]:,}<extra></extra>"
+                lon=d["lon"], lat=d["lat"], text=hover, hoverinfo="text",
+                mode="markers", name="",
+                marker=dict(size=d["radius"], color="#1f6feb", opacity=0.65,
+                            line=dict(width=1, color="white")),
             ))
 
-        fig.update_geos(
-            scope="europe",
-            showland=True, landcolor="#f0f2f5",
-            showcountries=True, countrycolor="white",
-            projection_type="natural earth",
-            fitbounds="locations"
-        )
         fig.update_layout(
             margin=dict(l=0, r=0, t=0, b=0),
             height=460,
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            legend=dict(orientation="h", y=0.01)
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h"),
         )
         return fig
-
 
     @output
     @sw.render_widget
-    def barPlot():
-        df = dc_eu().copy()
-        if "Share" not in df.columns:
-            return px.bar(title="Données insuffisantes pour calculer la part (%)")
-
-        dark = is_dark_input(input)
-        df = df.sort_values("Share")
-
-        fig = px.bar(
-            df, x="Share", y="Country",
-            orientation="h",
-            color="Share",
-            color_continuous_scale="Blues" if not dark else "Teal",
-            labels={"Share": "", "Country": ""}
-        )
-        fig.update_layout(
-            coloraxis_showscale=False,
-            xaxis=dict(ticksuffix="%", showgrid=True, gridcolor="#eaeef3" if not dark else "#243042"),
-            yaxis=dict(showgrid=False),
-            margin=dict(l=120, r=30, t=20, b=30),
-            height=460,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            annotations=[dict(
-                x=0, y=-0.2, xref="paper", yref="paper",
-                showarrow=False, text="Source : ICIS (DataCentreMap, Statista)",
-                font=dict(size=12, color="gray")
-            )],
-        )
-        return fig
+    def barPlot_eu():
+        df = dc_eu.copy()
+        if "nb_dc" in df.columns and "name" in df.columns:
+            tot = float(df["nb_dc"].sum()) if df["nb_dc"].notna().any() else 0.0
+            if tot <= 0:
+                return px.bar(title="Données insuffisantes")
+            df = df.assign(Share=(df["nb_dc"] / tot) * 100).sort_values("Share")
+            fig = px.bar(
+                df, x="Share", y="name",
+                orientation="h", color="Share", color_continuous_scale="Blues",
+                labels={"Share": "", "name": ""},
+            )
+            fig.update_layout(
+                coloraxis_showscale=False,
+                xaxis=dict(ticksuffix="%", showgrid=True, gridcolor="#eaeef3"),
+                yaxis=dict(showgrid=False),
+                margin=dict(l=120, r=30, t=20, b=30),
+                height=460,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                annotations=[dict(
+                    x=0, y=-0.2, xref="paper", yref="paper",
+                    showarrow=False, text="Source : ICIS (DataCentreMap, Statista)",
+                    font=dict(size=12, color="gray")
+                )],
+            )
+            return fig
+        return px.bar(title="Données insuffisantes")
 
     @output
     @sw.render_widget
     def dc_demand_plot():
         df = pd.DataFrame({"Année": ["2024","2035"], "TWh": [96, 236]})
         fig = px.bar(df, x="Année", y="TWh",
-                     color="Année",
-                     color_discrete_map={"2024": "#3B556D", "2035": "#5FC2BA"})
+                     color="Année", color_discrete_map={"2024": "#3B556D", "2035": "#5FC2BA"})
         fig.update_traces(opacity=0.9, text=df["TWh"].astype(str)+" TWh", textposition="outside")
         fig.update_layout(
             yaxis_title="Demande (TWh)", xaxis_title=None,
             margin=dict(l=40, r=20, t=10, b=40),
-            height=420,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+            height=420, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
         )
         fig.update_yaxes(range=[0, float(df["TWh"].max()) * 1.25])
         return fig
 
 
-# Lancer l'app
+# -------- App --------
 app = App(app_ui, server)
