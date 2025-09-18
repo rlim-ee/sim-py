@@ -63,7 +63,7 @@ app_ui = ui.page_fluid(
             {"class": "card"},
             ui.h3("Contexte", class_="section-title"),
             ui.p(
-                "Carte choroplèthe (DC / million d’habitants) basée sur ton GeoJSON + bulles proportionnelles au nombre total de DC. "
+                "Carte choroplèthe (DC / million d'habitants) + bulles proportionnelles au nombre total de DC. "
                 "À droite : part du nombre total de DC par pays.",
                 class_="section-text",
             ),
@@ -77,7 +77,7 @@ app_ui = ui.page_fluid(
                     ui.h3("Répartition des DC en Europe", class_="section-title"),
                     sw.output_widget("eu_map"),
                     ui.p(
-                        "Couleur = DC par million d’habitants ; bulles = intensité absolue (nombre total de DC).",
+                        "Couleur = DC par million d'habitants ; bulles = intensité absolue (nombre total de DC).",
                         class_="section-text",
                     ),
                 ),
