@@ -232,7 +232,7 @@ def server(input, output, session):
         fig = px.bar(
             df, x="Share", y="name",
             orientation="h",
-            color="Share", color_continuous_scale="Blues",
+            color="Share", color_continuous_scale="Plasma",
             labels={"Share": "", "name": ""},
         )
         fig.update_traces(hovertemplate="Pays : %{y}<br>Part : %{x:.2f}%<extra></extra>")
@@ -241,15 +241,9 @@ def server(input, output, session):
             xaxis=dict(ticksuffix="%", showgrid=True, gridcolor="#eaeef3"),
             yaxis=dict(showgrid=False),
             margin=dict(l=120, r=30, t=20, b=30),
-            height=460,
+            height=422,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            annotations=[dict(
-                x=0, y=-0.2, xref="paper", yref="paper",
-                showarrow=False,
-                text="Source : ICIS (DataCentreMap, Statista)",
-                font=dict(size=12, color="gray"),
-            )],
         )
         return fig
 
