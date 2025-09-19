@@ -1,4 +1,4 @@
-# ui.py — DC en Europe (style “simulations”) + switch Clair/Sombre
+# ui.py — Accueil + DC Europe + Énergie France (carte simple + camembert + évolution + bivariée + radar)
 from pathlib import Path
 from shiny import ui
 import shinywidgets as sw
@@ -21,25 +21,80 @@ head = ui.tags.head(
           const root = document.documentElement;
           function apply(theme){
             root.classList.remove('theme-light','theme-dark');
-            root.classList.add(theme === 'light' ? 'theme-light' : 'theme-dark');
+            root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
           }
-          document.addEventListener('DOMContentLoaded', function(){
-            const checked = document.querySelector("input[name='theme_mode']:checked");
-            apply(checked ? checked.value : 'light');
-          });
           document.addEventListener('change', function(e){
             if (e.target && e.target.name === 'theme_mode') apply(e.target.value);
           });
-          if (window.Shiny && Shiny.addCustomMessageHandler){
-            Shiny.addCustomMessageHandler('set-theme', function(theme){ apply(theme); });
-          }
+          document.addEventListener('DOMContentLoaded', function(){
+            const r = document.querySelector("input[name='theme_mode']:checked");
+            if (r) apply(r.value);
+          });
         })();
         """
     ),
 )
 
-app_ui = ui.page_fluid(
-    head,
+# Sélecteur d’onglet (accueil/Europe/France)
+page_selector = ui.div(
+    {"class": "card"},
+    ui.h3("Navigation", class_="section-title"),
+    ui.input_radio_buttons(
+        "page",
+        None,
+        {"home": "Accueil", "eu": "DC — Europe", "fr": "Énergie — France"},
+        selected="home",
+        inline=True,
+    ),
+)
+
+# Accueil
+home_panel = ui.panel_conditional(
+    "input.page === 'home'",
+    ui.div(
+        {"class": "container-app"},
+        ui.div(
+            {"class": "card"},
+            ui.h2("Matérialités du numérique — Tableau de bord", class_="mb-2"),
+            ui.p(
+                "Choisissez un onglet ci-dessus : (1) DC en Europe ; (2) Bilan énergétique France.",
+                class_="section-text",
+            ),
+        ),
+        ui.row(
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Répartition des DC (Europe)"),
+                    ui.p("Choroplèthe DC/million + bulles (nb total de DC)."),
+                    ui.tags.button(
+                        "Ouvrir l’onglet Europe",
+                        class_="btn btn-primary mt-2",
+                        onclick="Shiny.setInputValue('page','eu',{priority:'event'})",
+                    ),
+                ),
+            ),
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Bilan énergétique (France)"),
+                    ui.p("Carte régionale, camembert par filière, évolution annuelle, typologie bivariée, radar."),
+                    ui.tags.button(
+                        "Ouvrir l’onglet France",
+                        class_="btn btn-success mt-2",
+                        onclick="Shiny.setInputValue('page','fr',{priority:'event'})",
+                    ),
+                ),
+            ),
+        ),
+    ),
+)
+
+# DC — Europe (identique visuellement ; Choropleth sous le capot)
+europe_panel = ui.panel_conditional(
+    "input.page === 'eu'",
     ui.div(
         {"class": "container-app"},
         ui.row(
@@ -58,7 +113,6 @@ app_ui = ui.page_fluid(
                 ),
             ),
         ),
-
         ui.div(
             {"class": "card"},
             ui.h3("Contexte", class_="section-title"),
@@ -68,7 +122,6 @@ app_ui = ui.page_fluid(
                 class_="section-text",
             ),
         ),
-
         ui.row(
             ui.column(
                 6,
@@ -88,56 +141,73 @@ app_ui = ui.page_fluid(
                     {"class": "card"},
                     ui.h3("Part du nombre des DC en Europe", class_="section-title"),
                     sw.output_widget("barPlot_eu"),
-                    ui.p(
-                        "Répartition proportionnelle par pays (ordre croissant).",
-                        class_="section-text",
-                    ),
+                    ui.p("Répartition proportionnelle par pays (ordre croissant).", class_="section-text"),
                 ),
             ),
         ),
-
-        ui.div(
-            {"class": "card"},
-            ui.h3("Chiffres clés", class_="section-title"),
-            ui.row(
-                ui.column(
-                    4,
-                    ui.div(
-                        {"class": "metric accent-yellow"},
-                        ui.h4("Demande énergétique 2035"),
-                        ui.div({"class": "value"}, "236 TWh"),
-                        ui.tags.small("Projection : ~5,7 % de la demande électrique européenne."),
-                    ),
-                ),
-                ui.column(
-                    4,
-                    ui.div(
-                        {"class": "metric accent-orange"},
-                        ui.h4("Croissance 2024 → 2035"),
-                        ui.div({"class": "value"}, "+146 %"),
-                        ui.tags.small("Croissance projetée de la demande des DC."),
-                    ),
-                ),
-                ui.column(
-                    4,
-                    ui.div(
-                        {"class": "metric accent-cyan"},
-                        ui.h4("Concentration géographique"),
-                        ui.div({"class": "value"}, "79 %"),
-                        ui.tags.small("10 pays concentrent la majorité de la demande."),
-                    ),
-                ),
-            ),
-        ),
-
         ui.div(
             {"class": "card"},
             ui.h3("Évolution de la demande énergétique", class_="section-title"),
             sw.output_widget("dc_demand_plot"),
-            ui.p(
-                "Selon ICIS, la demande des DC en Europe passerait de 96 TWh en 2024 à 236 TWh en 2035.",
-                class_="section-text",
+        ),
+    ),
+)
+
+# Énergie — France
+france_panel = ui.panel_conditional(
+    "input.page === 'fr'",
+    ui.div(
+        {"class": "container-app"},
+        ui.div({"class": "card"}, ui.h2("Analyse régionale de la production et consommation d’énergie")),
+        ui.row(
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Consommation vs Production (carte)"),
+                    ui.input_select(
+                        "fr_var",
+                        "Choisir l’indicateur à afficher :",
+                        {"prod": "Production totale (TWh)", "conso": "Consommation totale brute (TWh)"},
+                        selected="prod",
+                    ),
+                    sw.output_widget("map_fr", height="500px"),
+                ),
+            ),
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Production d’énergie par filière (camembert)"),
+                    ui.input_select("region_fr", "Choisir une région :", choices=["France"], selected="France"),
+                    sw.output_widget("pie_fr", height="500px"),
+                ),
+            ),
+        ),
+        ui.div(
+            {"class": "card"},
+            ui.h3("Évolution de la production par filière + ligne conso"),
+            sw.output_widget("area_fr", height="360px"),
+        ),
+        ui.row(
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Typologie bivariée Production (↑) / Consommation (→)"),
+                    sw.output_widget("map_fr_bivar", height="430px"),
+                ),
+            ),
+            ui.column(
+                6,
+                ui.div(
+                    {"class": "card"},
+                    ui.h3("Radar Production vs Consommation"),
+                    sw.output_widget("radar_fr", height="430px"),
+                ),
             ),
         ),
     ),
 )
+
+app_ui = ui.page_fluid(head, page_selector, home_panel, europe_panel, france_panel)
