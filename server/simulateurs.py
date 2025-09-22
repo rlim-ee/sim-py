@@ -296,8 +296,8 @@ def server(input, output, session):
     def surface_info():
         return ui.HTML(
             """
-            <p><em><strong>Note :</strong> La surface indiquée pour l’éolien correspond à la surface totale mobilisée
-            (espacement, sécurité), qui n’est pas entièrement artificialisée.</em></p>
+            <p><em><strong>Note :</strong> La surface indiquée pour l'éolien correspond à la surface totale mobilisée
+            (espacement, sécurité), qui n'est pas entièrement artificialisée.</em></p>
             <p><em>Pour le solaire, la surface correspond à une estimation plus proche de la surface réellement
             artificialisée au sol.</em></p>
             <p style="opacity:.8"><em>Le pourcentage affiché est calculé par rapport à une surface de référence de
