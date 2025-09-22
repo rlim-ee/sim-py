@@ -71,6 +71,34 @@ def bloc_thematique_simple(titre: str, suffix: str):
     )
 
 
+def bloc_repartition():
+    """Carte Répartition des data centers (ta carte Folium)."""
+    return ui.card(
+        ui.div({"class": "card-title"}, "Répartition des data centers"),
+        ui.navset_tab(
+            ui.nav_panel("Europe", ui.output_ui("repartition_map")),
+            ui.nav_panel("FLAP-D", ui.markdown("*(vide pour le moment)*")),
+            id="tabs_repartition",
+        ),
+        full_screen=True,
+        class_="thematique-card",
+    )
+
+
+def bloc_bilan():
+    """Carte Bilan énergétique (placeholders)."""
+    return ui.card(
+        ui.div({"class": "card-title"}, "Bilan énergétique"),
+        ui.navset_tab(
+            ui.nav_panel("France", ui.output_ui("bilan_panel1")),
+            ui.nav_panel("AURA", ui.output_ui("bilan_panel2")),
+            id="tabs_bilan",
+        ),
+        full_screen=True,
+        class_="thematique-card",
+    )
+
+
 def bloc_simulateurs():
     """Carte Simulateurs contenant 2 onglets complets."""
     return ui.card(
@@ -247,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {{
     ),
 
     # --- 3 cartes empilées ---
-    bloc_thematique_simple("Répartition des data centers", "a"),
-    bloc_thematique_simple("Bilan énergétique", "b"),
+    bloc_repartition(),
+    bloc_bilan(),
     bloc_simulateurs(),
 )
