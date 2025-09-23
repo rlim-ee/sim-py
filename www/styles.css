@@ -105,8 +105,8 @@ html.theme-dark .nav-tabs .nav-link.active{
   border:1px solid var(--border);
   color:var(--text);
 }
-.sidebar h4{ font-weight:800; letter-spacing:.2px; margin-bottom:10px; }
-.form-label{ font-weight:800; color:var(--muted); }
+.sidebar h4{ font-weight:700; letter-spacing:.2px; margin-bottom:10px; }
+.form-label{ font-weight:600; color:var(--muted); }
 .form-select:focus, .form-control:focus{
   border-color: var(--brand); box-shadow:0 0 0 .25rem var(--ring);
 }
@@ -332,4 +332,229 @@ html.theme-dark .card p strong {
 .panel-body { padding-bottom: 8px; }
 .panel .panel-foot { margin-top: 10px; }
 
+/* ---------- ENCADRÉS DÉROULANTS (dropcard) ---------- */
+.dropcard{
+  background: var(--card);
+  color: var(--text);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--panel-sh);
+  margin: 14px 0 18px;
+  overflow: hidden;
+}
+.dropcard > summary{
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 14px 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.dropcard > summary::-webkit-details-marker{ display:none; }
+.dropcard .drop-body{
+  padding: 0 16px 14px 16px;
+  color: var(--text);
+}
+.dropcard summary .chev{
+  margin-left: auto;
+  transition: transform .18s ease;
+}
+.dropcard[open] summary .chev{ transform: rotate(180deg); }
+
+/* sombre */
+html.dark .dropcard,
+html.theme-dark .dropcard{
+  background: var(--panel-bg);
+  color: var(--panel-fg);
+  border-color: var(--border);
+  box-shadow: var(--panel-sh);
+}
+
+/* --- Encadrés déroulants (Résumé) --- */
+.dropcard{
+  display:block;
+  width:100%;
+  max-width:100%;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:0 8px 24px rgba(18,38,63,.07);
+  overflow:hidden;            /* pas de débordement visuel */
+  box-sizing:border-box;
+  margin:14px 0;
+}
+
+.dropcard > summary{
+  cursor:pointer;
+  outline:none;
+  user-select:none;
+  padding:14px 18px;
+  font-weight:800;
+  letter-spacing:.2px;
+  list-style:none;            /* retire le triangle par défaut (Chrome) */
+}
+.dropcard > summary::-webkit-details-marker{ display:none; } /* retire le triangle (Safari/Chrome) */
+
+.dropcard[open] > summary{
+  border-bottom:1px solid var(--border);
+}
+
+/* Contenu avec padding régulier */
+.dropcard .dropbody{
+  padding:12px 18px 16px;
+}
+
+/* Empêche tout débordement horizontal du texte */
+.dropcard .dropbody,
+.dropcard p,
+.dropcard li{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+/* Espacements typographiques */
+.dropcard p{ margin:0 0 10px; }
+.dropcard ul{ margin:8px 0 10px; padding-left:1.2rem; }
+.dropcard li{ margin:4px 0; }
+
+/* Ligne de séparation discrète */
+.dropcard hr{
+  border:0;
+  border-top:1px solid var(--border);
+  margin:12px 0;
+}
+
+/* Dark mode */
+html.dark .dropcard,
+html.theme-dark .dropcard{
+  background:var(--panel-bg);
+  box-shadow:var(--panel-sh);
+  border-color:var(--border);
+}
+
+/* ===== Panneau compact (uniquement pour le graphique d'évolution) ===== */
+.panel.panel-compact{ padding:12px; border-radius:14px; }
+.panel.panel-compact .panel-head{ margin-bottom:6px; }
+.panel.panel-compact .panel-title{ font-size:18px; line-height:1.2; }
+.panel.panel-compact .panel-body{ padding:6px 8px; }
+
+/* Plotly : occupe toute la largeur, modebar rapproché */
+.panel.panel-compact .js-plotly-plot{ width:100% !important; }
+.panel.panel-compact .modebar{ right:6px !important; top:6px !important; }
+
+/* Séparateur discret entre les blocs de l'onglet France */
+.section-sep{
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 10px 0 14px;   /* espace au-dessus/au-dessous du trait */
+  opacity: .9;
+}
+
+/* ---------- FOOTER ---------- */
+.app-footer{
+  border-top:1px solid var(--border);
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  margin-top: 26px;
+}
+.footer-inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-logos{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  min-height: 44px;
+}
+.footer-logos img{
+  height: 40px;           /* ajuste si besoin (ex. 48px) */
+  width:auto;
+  object-fit:contain;
+  display:inline-block;
+}
+
+/* alterner les versions clair/sombre */
+.partners--dark{ display:none; }
+html.dark .partners--light{ display:none; }
+html.dark .partners--dark{ display:inline-block; }
+
+.footer-credits{
+  color: var(--muted);
+  font-size: 14px;
+  text-align:right;
+}
+.footer-credits strong{
+  color: var(--text);
+}
+
+/* Footer logos: n'afficher qu'une version selon le thème */
+.app-footer .partners--dark { display: none !important; }
+
+html.dark .app-footer .partners--light,
+html.theme-dark .app-footer .partners--light { display: none !important; }
+
+html.dark .app-footer .partners--dark,
+html.theme-dark .app-footer .partners--dark { display: inline-block !important; }
+
+/* --- Dropcards: add a chevron + nicer interactions --- */
+.dropcard { 
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--panel-sh);
+  margin: 10px 0 18px;
+  overflow: hidden;
+}
+
+/* Title row */
+.dropcard > summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 12px 16px;
+  font-weight: 800;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;           /* hide default marker */
+  user-select: none;
+}
+.dropcard > summary::-webkit-details-marker { display: none; } /* Safari/Chromium */
+
+/* Custom chevron on the left */
+.dropcard > summary::before{
+  content: "";
+  width: 10px; height: 10px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);          /* ► */
+  transition: transform .18s ease;
+  margin-right: .2rem;
+}
+.dropcard[open] > summary::before{
+  transform: rotate(45deg);           /* ▼ */
+}
+
+/* Body */
+.dropcard .dropbody{
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* Focus/hover states (keyboard accessible) */
+.dropcard > summary:hover{ background: color-mix(in oklab, var(--card) 92%, #000 8%); }
+html.dark .dropcard > summary:hover,
+html.theme-dark .dropcard > summary:hover{ background: #0f172a; }
+.dropcard > summary:focus-visible{
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 

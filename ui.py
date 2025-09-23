@@ -47,13 +47,34 @@ def _logo_srcs() -> tuple[str, str | None, str]:
     return light, dark, logo_class
 
 LOGO_LIGHT, LOGO_DARK, LOGO_CLASS = _logo_srcs()
+# Logos partenaires (clair/sombre) – cherche automatiquement dans www/images/
+PARTNERS_LIGHT = _find_logo(["logos"])
+PARTNERS_DARK  = _find_logo(["logos_dark"])
+
+
+# ---------- petit helper pour un encadré déroulant ----------
+# ---------- petit helper pour un encadré déroulant ----------
+# helper encadré déroulant (remplace ta version actuelle)
+def dropcard(title: str, *children, open: bool = False):
+    attrs = {"class": "dropcard"}
+    if open:
+        attrs["open"] = "open"  # <details open>
+    return ui.tags.details(
+        ui.tags.summary(title),
+        ui.div(*children, class_="dropbody"),   # <- wrapper avec padding
+        **attrs,
+    )
+
+
 
 # ---------- Blocs UI réutilisables ----------
 def bloc_repartition():
-    """Navset Répartition : Présentation / Europe (map+barres+KPI) / FLAP-D (vide)"""
+    """Navset Répartition : Europe (map+barres+KPI) / FLAP-D (placeholder)"""
 
     # Contenu Europe
     europe_panel = ui.div(
+        # Résumé (vide pour l’instant)
+        dropcard("Résumé — Répartition", ui.p("À compléter…")),
         ui.div(
             ui.div(
                 ui.div({"class": "panel"},
@@ -98,6 +119,7 @@ def bloc_repartition():
 
     # FLAP-D placeholder
     flapd_panel = ui.div(
+        dropcard("Résumé — FLAP-D", ui.p("À compléter…")),
         ui.h4("FLAP-D"),
         ui.p("Espace réservé pour les hubs Francfort, Londres, Amsterdam, Paris, Dublin (à venir)."),
         class_="pt-2"
@@ -117,10 +139,11 @@ def bloc_repartition():
     )
 
 def bloc_bilan():
-    """Bilan énergétique — Résumé / France (carte + camembert) / AURA (placeholder)"""
+    """Bilan énergétique — France (carte + camembert) / AURA (placeholder)"""
 
     # France : Carte + Pie
     france = ui.div(
+        dropcard("Résumé — Bilan énergétique", ui.p("À compléter…")),
         ui.div(
             # Colonne GAUCHE : carte FR
             ui.div(
@@ -157,10 +180,26 @@ def bloc_bilan():
             ),
             class_="row gap-4 row-eq",
         ),
+        ui.tags.hr(class_="section-sep"),
+        ui.div(
+            ui.div(
+                {"class": "panel panel-compact"},
+                ui.div(
+                    {"class": "panel-head"},
+                    ui.tags.i({"class": "fa-solid fa-chart-area"}),
+                    ui.h4("Évolution de la production et consommation énergétique en France entre 2010 et 2024", class_="panel-title"),
+                ),
+                ui.div(sw.output_widget("area_chart"), class_="panel-body"),
+            ),
+            class_="col-12",
+        ),
     )
 
     # AURA placeholder
-    aura   = ui.markdown("*(à venir — indicateurs Auvergne-Rhône-Alpes : zoom régional, comparaisons, parts)*")
+    aura   = ui.div(
+        dropcard("Résumé — AURA", ui.p("À compléter…")),
+        ui.markdown("*(à venir — indicateurs Auvergne-Rhône-Alpes : zoom régional, comparaisons, parts)*")
+    )
 
     return ui.card(
         ui.div({"class":"card-title"}, ui.tags.i({"class":"fa-solid fa-bolt me-2"}), "Bilan énergétique"),
@@ -174,7 +213,7 @@ def bloc_bilan():
     )
 
 def bloc_simulateurs():
-    """3 onglets : Présentation / Analyse prédictive / Analyse comparative (+ KPI neutres)"""
+    """2 onglets : Analyse prédictive / Analyse comparative (+ KPI neutres)"""
 
     # --- Analyse prédictive ---
     predictive_panel = ui.layout_sidebar(
@@ -187,6 +226,64 @@ def bloc_simulateurs():
                    ui.output_text("facteur_charge_affiche")),
             class_="sidebar",
         ),
+
+        # --- Résumé détaillé (ton texte) ---
+        dropcard(
+            "Résumé — Analyse prédictive",
+            ui.div(
+                ui.p("Cette simulation a pour objectif de comparer la consommation électrique projetée d'un ou plusieurs data centers (DC) avec la production totale d'énergie en France selon le rapport de RTE, sur la période 2025–2035."),
+                ui.p("Les projections de consommation sont établies à partir des estimations de puissance du data center actuellement en construction à Éybens."),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("📈 Hypothèses d'évolution :"),
+                    " Les prévisions suivent les étapes de développement du projet Data One :"),
+                ui.tags.ul(
+                    ui.tags.li("2025 : 15 MW"),
+                    ui.tags.li("2026 : 200 MW"),
+                    ui.tags.li("2028 : 400 MW"),
+                    ui.tags.li("2035 : 1 000 MW"),
+                ),
+
+                ui.p("🏗️ La simulation permet d'extrapoler jusqu'à 35 data centers, en cohérence avec les ambitions exprimées par les pouvoirs publics en matière d'infrastructures numériques, notamment dans le cadre du développement de l'intelligence artificielle."),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("📊 Représentation graphique :")),
+                ui.tags.ul(
+                    ui.tags.li("Les points rouges indiquent la consommation cumulée des data centers ajoutée à la consommation énergétique 2024 (Consommation simulée)."),
+                    ui.tags.li("La courbe verte représente la trajectoire de référence de la production énergétique nationale."),
+                    ui.tags.li("La courbe bleue représente la trajectoire de référence de la consommation énergétique nationale."),
+                    ui.tags.li("Les pointillés verts/bleus indiquent les variations min/max des différents scénarios RTE."),
+                ),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("⚡ Équivalent en unités de production :"),
+                    " La simulation permet de comparer la consommation projetée des data centers en 2035 avec la production nécessaire par filière :"),
+                ui.tags.ul(
+                    ui.tags.li("Réacteurs nucléaires"),
+                    ui.tags.li("Grands barrages hydrauliques"),
+                    ui.tags.li("Centrales à charbon"),
+                    ui.tags.li("Éoliennes"),
+                    ui.tags.li("Panneaux solaires"),
+                    ui.tags.li("Centrales à biomasse"),
+                ),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("💡 Conversion des unités :"),
+                    " Pour comparer les consommations projetées, il est nécessaire de convertir les unités de GW en TWh/an selon la formule :"),
+                ui.p(ui.em("Énergie annuelle (GWh/an) = Puissance (GW) × 24 heures × 365 jours")),
+                ui.p("Exemple pour un data center d'une puissance d'1 GW et un facteur de charge de 60 % : 1 × 24 × 365 × 0,6 = 5 256 GWh/an = 5,26 TWh/an"),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("🎯 Objectif :"),
+                    " Cette simulation vise à éclairer les enjeux d'articulation entre les besoins énergétiques croissants des infrastructures numériques et les capacités de production énergétique du pays dans une perspective de planification énergétique à long terme.")
+            ),
+        ),
+
         ui.div({"class": "card"},
                ui.h3("Tendances 2000–2050 (références)", class_="section-title"),
                sw.output_widget("energiePlot")),
@@ -253,6 +350,44 @@ def bloc_simulateurs():
             ui.input_select("unit_perso_2", "Unité", ["kWh/an", "MWh/an", "GWh/an"], selected="MWh/an"),
             class_="sidebar",
         ),
+
+        # --- Résumé détaillé (ton 2e texte) ---
+        dropcard(
+            "Résumé — Analyse comparative",
+            ui.div(
+                ui.p("Ce graphique permet de représenter et de comparer le nombre d'habitants équivalents pour chaque palier de consommation du data center d'Eybens entre 2025 et 2035. Et ce, en prenant des exemples de profils de consommation du secteur résidentiel uniquement et ceux par personne à travers le monde et en France."),
+                ui.p("Les barres représentent le nombre d'habitants équivalents selon la consommation moyenne."),
+                ui.p("Cochez les profils pour adapter la simulation."),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("🔍 Estimation initiale :"),
+                     " La consommation du DC est basée sur le data center actuellement en construction à Éybens."),
+                ui.p(ui.strong("📈 Évolution prévue :"),
+                     " Les projections suivent les plans de développement de Data One :"),
+                ui.tags.ul(
+                    ui.tags.li("2025 : 15 MW"),
+                    ui.tags.li("2026 : 200 MW"),
+                    ui.tags.li("2028 : 400 MW"),
+                    ui.tags.li("2035 : 1 000 MW"),
+                ),
+
+                ui.tags.hr(),
+
+                ui.p(ui.strong("💡 Conversion des unités :"),
+                     " Pour comparer les consommations projetées de Data One aux consommations annuelles moyennes d'individus, il est nécessaire de convertir l'unité des projections de Data One (exprimées en GW) afin d'obtenir des valeurs en GWh/an. Pour ce faire, on applique la formule suivante :"),
+                ui.p(ui.em("Énergie annuelle (en GWh/an) = Puissance (GW) × nombre d'heures d'utilisation par jour × nombre de jours d'utilisation par an")),
+                ui.p("Par exemple, calculons la conversion de la projection de 2035 pour 1 GW :"),
+                ui.p(ui.em("Énergie annuelle (GWh) = 1 × 24 × 365 = 8 760 GWh/an")),
+                ui.tags.ul(
+                    ui.tags.li("Ou encore 8 760 000 000 kWh/an"),
+                    ui.tags.li("Soit 8 760 000 MWh/an"),
+                    ui.tags.li("Ou l'équivalent de 8,76 TWh/an"),
+                ),
+                ui.p("On peut donc diviser les différentes consommations annuelles projetées par la consommation moyenne souhaitée pour obtenir le nombre d'individus équivalents.")
+            ),
+        ),
+
         ui.div({"class": "card"},
                ui.h3("Habitants équivalents par palier (profils sélectionnés)", class_="section-title"),
                sw.output_widget("barplot"),
@@ -294,6 +429,28 @@ def bloc_simulateurs():
         ),
         full_screen=True,
         class_="thematique-card",
+    )
+    
+def app_footer():
+    return ui.tags.footer(
+        ui.div(
+            ui.div(
+                ui.tags.img(src=PARTNERS_LIGHT or "images/logos.png", alt="Partenaires", class_="partners partners--light", loading="lazy"),
+                ui.tags.img(src=PARTNERS_DARK or "images/logos_dark.png", alt="Partenaires (mode sombre)", class_="partners partners--dark", loading="lazy"),
+                class_="footer-logos",
+            ),
+            ui.div(
+                ui.span("Conception & développement : "),
+                ui.strong("Zoé CARGNELLI"),
+                ui.span(" & "),
+                ui.strong("Robert LIM"),
+                ui.br(),
+                ui.span("© 2025 — Matérialités du numérique • Projet VerIT"),
+                class_="footer-credits",
+                ),
+            class_="footer-inner",
+        ),
+        class_="app-footer",
     )
 
 # ---------- UI principale ----------
@@ -348,7 +505,14 @@ document.addEventListener('DOMContentLoaded', () => {{
         class_="topbar",
     ),
 
+    # Présentation générale en haut de page (plein large)
+    dropcard(
+        "Présentation générale",
+        ui.p("Présentation globale du dashboard, contexte et mode d’emploi. (À compléter…)"),
+    ),
+
     bloc_repartition(),
     bloc_bilan(),
     bloc_simulateurs(),
+    app_footer(),
 )

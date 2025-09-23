@@ -1,4 +1,4 @@
-# server/bilan.py — Bilan énergétique (perf+dark)
+# server/bilan.py — Bilan énergétique (perf + dark + aire empilée)
 
 from __future__ import annotations
 from shiny import render, reactive, ui
@@ -9,7 +9,9 @@ import geopandas as gpd
 import folium
 from pathlib import Path
 import plotly.express as px
+import plotly.graph_objects as go
 import json
+from io import StringIO
 
 # ------------------ Constantes / couleurs ------------------
 COLORS = {
@@ -29,8 +31,10 @@ PIE_FIELDS   = ["PR_NUC_TWH","PR_HYD_TWH","PR_EOL_TWH","PR_SOL_TWH","PR_FOS_TWH"
 PIE_LABELS   = ["Nucléaire","Hydraulique","Éolien","Solaire","Fossile","Autre"]
 
 def _is_dark(input) -> bool:
-    try: return bool(input.darkmode())
-    except Exception: return False
+    try:
+        return bool(input.darkmode())
+    except Exception:
+        return False
 
 # ------------------ Chargement + préparation (une seule fois) ------------------
 def _load_data_prepared(app_dir: Path):
@@ -38,7 +42,6 @@ def _load_data_prepared(app_dir: Path):
 
     # 1) Lire le GeoJSON brut (pour l’overlay contours Folium)
     gj_text = path.read_text(encoding="utf-8")
-    gj_obj = json.loads(gj_text)
 
     # 2) GeoPandas pour les valeurs et le point interne (placement des cercles)
     gdf = gpd.read_file(path)
@@ -63,8 +66,7 @@ def _load_data_prepared(app_dir: Path):
         gj_text_simpl = gdf_simpl.to_crs(4326).to_json()
         gj_text = gj_text_simpl
     except Exception:
-        # si simplification échoue, on garde le brut
-        pass
+        pass  # si simplification échoue, on garde le brut
 
     regions = sorted(gdf["NOM"].astype(str).tolist())
     # Sommes nationales pour le pie "France"
@@ -79,17 +81,17 @@ def _load_data_prepared(app_dir: Path):
 
 # ------------------ Fabrique la carte Folium ------------------
 def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, metric_key: str, dark: bool) -> str:
-    tiles = "cartodb positron" if not dark else "CartoDB dark_matter"
+    tiles = "cartodbdark_matter" if dark else "cartodbpositron"
     contour_color   = "#6B7280" if not dark else "#94A3B8"
     highlight_color = "#111827" if not dark else "#E2E8F0"
     circle_color    = COLORS["prod"] if metric_key == METRIC_PROD else COLORS["conso"]
     label_metric    = "Production" if metric_key == METRIC_PROD else "Consommation"
 
-    m = folium.Map(location=[46.8, 2.5], zoom_start=5, tiles=tiles, control_scale=True)
+    m = folium.Map(location=[46.8, 2.5], zoom_start=5, tiles=tiles, control_scale=True, width="100%")
 
     # contours
     folium.GeoJson(
-        data=gj_text,
+        data=json.loads(gj_text),
         name="Régions (contours)",
         style_function=lambda feat: {
             "fillColor": "#000000",
@@ -154,6 +156,7 @@ def server(input, output, session, app_dir: Path):
         if key not in _map_cache:
             _map_cache[key] = _build_map_html(d["gdf"], d["gj_text"], metric, dark)
 
+        # on laisse le conteneur gérer la hauteur (CSS panel-body)
         return ui.HTML(_map_cache[key])
 
     # --------- Camembert (rendu paresseux) ---------
@@ -177,9 +180,9 @@ def server(input, output, session, app_dir: Path):
             s = (row.iloc[0][PIE_FIELDS] if not row.empty else pd.Series([0,0,0,0,0,0], index=PIE_FIELDS))
             title = f"Production par filière (TWh/an) — {region}"
 
-        df = pd.DataFrame({"Filière": PIE_LABELS, "TWh": s.values.astype(float)})
+        df_pie = pd.DataFrame({"Filière": PIE_LABELS, "TWh": s.values.astype(float)})
         fig = px.pie(
-            df, names="Filière", values="TWh", title=title, hole=0.15,
+            df_pie, names="Filière", values="TWh", title=title, hole=0.15,
             color="Filière", color_discrete_map=PIE_COLOR_MAP
         )
 
@@ -194,4 +197,119 @@ def server(input, output, session, app_dir: Path):
             title=dict(font=dict(color=font_color)),
             margin=dict(t=58, r=10, b=10, l=10),
         )
+        return fig
+
+    # --------- Aire empilée + conso (2010–2024) ---------
+    @output
+    @sw.render_widget
+    def area_chart():
+        try:
+            if input.tabs_bilan() != "France":
+                return go.Figure()
+        except Exception:
+            pass
+
+        # Données CSV (séparateur ;) — adapter si chargé d'un fichier
+        csv_text = """year;conso;nucleaire;hydraulique;fossile;eolien;solaire;autre
+2010;499;408;68;55;10;1;5
+2011;472;416;50;52;12;2;6
+2012;487;405;64;48;15;4;6
+2013;495;404;76;40;16;5;7
+2014;463;416;67;25;17;6;7
+2015;474;384;59;33;21;7;7
+2016;482;384;64;45;20;8;8
+2017;481;380;53;53;24;9;9
+2018;477;393;68;39;29;10;9
+2019;472;380;60;41;32;11;9
+2020;449;335;62;38;40;12;9
+2021;472;361;65;39;38;14;10
+2022;454;279;50;49;39;18;10
+2023;440;320;59;31;51;21;10
+2024;442;362;75;20;48;23;10
+"""
+        df = pd.read_csv(StringIO(csv_text), sep=";")
+
+        # Mapping couleurs (proche de ton R)
+        colors = {
+            "Nucléaire": "#FFE18B",
+            "Hydraulique": "#2071B2",
+            "Fossile":     "#313334",
+            "Éolien":      "#8DCDBF",
+            "Solaire":     "#F4902E",
+            "Autre":       "#14682D",
+        }
+
+        filieres = {
+            "nucleaire": "Nucléaire",
+            "hydraulique": "Hydraulique",
+            "fossile": "Fossile",
+            "eolien": "Éolien",
+            "solaire": "Solaire",
+            "autre": "Autre",
+        }
+
+        df_long = (
+            df.melt(id_vars=["year", "conso"],
+                    value_vars=list(filieres.keys()),
+                    var_name="filiere", value_name="production")
+              .assign(filiere=lambda d: d["filiere"].map(filieres))
+        )
+
+        # Thème clair/sombre
+        dark = _is_dark(input)
+        font_color = "#F8FAFC" if dark else "#0B162C"
+        grid_color = "rgba(203,213,225,.26)" if dark else "rgba(15,23,42,.08)"
+        paper_bg   = "rgba(0,0,0,0)"
+        plot_bg    = "rgba(0,0,0,0)"
+
+        fig = go.Figure()
+
+        # Aires empilées par filière
+        for f in colors:
+            dff = df_long[df_long["filiere"] == f]
+            fig.add_trace(
+                go.Scatter(
+                    x=dff["year"], y=dff["production"],
+                    mode="none", stackgroup="one", fill="tonexty",
+                    name=f, fillcolor=colors[f],
+                    # ⚠️ échapper les accolades dans une f-string : %{{x}} / %{{y}}
+                    hovertemplate=f"<b>{f}</b><br>Année: %{{x}}<br>Production: %{{y:.1f}} TWh<extra></extra>",
+                )
+            )
+
+        # Courbe de consommation
+        fig.add_trace(
+            go.Scatter(
+                x=df["year"], y=df["conso"], mode="lines",
+                name="Consommation", line=dict(color="red", width=3, dash="dash"),
+                hovertemplate="<b>Consommation</b><br>Année: %{{x}}<br>%{{y:.1f}} TWh<extra></extra>",
+            )
+        )
+
+        # Mise en forme (pas de titlefont direct dans xaxis/yaxis avec Plotly Python)
+        fig.update_layout(
+            title=None,  # <- évite le double-titre (le h4 du panneau suffit)
+            xaxis=dict(
+                title=dict(text="Année", font=dict(size=14, color=font_color)),
+                tickfont=dict(size=12, color=font_color),
+                gridcolor=grid_color,
+                zerolinecolor=grid_color,
+                ),
+            yaxis=dict(
+                title=dict(text="TWh", font=dict(size=14, color=font_color)),
+                tickfont=dict(size=12, color=font_color),
+                gridcolor=grid_color,
+                zerolinecolor=grid_color,
+                ),
+            legend=dict(
+                orientation="v",
+                x=1.01, y=0.98, xanchor="left",
+                font=dict(size=12, color=font_color)
+                ),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=48, r=36, t=8, b=36),   # <- marges resserrées
+            font=dict(color=font_color, family="Poppins, Arial, sans-serif")
+            )
+
         return fig
