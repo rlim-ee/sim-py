@@ -59,8 +59,7 @@ def bloc_repartition():
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
                               ui.tags.i({"class":"fa-solid fa-map-location-dot"}), ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
-                       ui.div(ui.output_ui("repartition_map"), class_="panel-body"),
-                       ui.div("Visualisation géographique de la distribution des data centres à travers l'Europe.", class_="panel-foot")),
+                       ui.div(ui.div({"class": "map-wrap"}, ui.output_ui("repartition_map")), class_="panel-body")),
                 class_="col"),
             ui.div(
                 ui.div({"class": "panel"},
@@ -97,19 +96,6 @@ def bloc_repartition():
         ),
     )
 
-    # Présentation (texte)
-    presentation_panel = ui.div(
-        ui.h4("Résumé"),
-        ui.p("balblabla"),
-        ui.tags.ul(
-            ui.tags.li("bla1"),
-            ui.tags.li("bla2"),
-            ui.tags.li("bla3"),
-        ),
-        ui.p("blablabla"),
-        class_="pt-2"
-    )
-
     # FLAP-D placeholder
     flapd_panel = ui.div(
         ui.h4("FLAP-D"),
@@ -122,7 +108,6 @@ def bloc_repartition():
                ui.tags.i({"class": "fa-solid fa-chart-area me-2"}),
                "Répartition des DC"),
         ui.navset_tab(
-            ui.nav_panel("Résumé", presentation_panel),
             ui.nav_panel("Europe", europe_panel),
             ui.nav_panel("FLAP-D", flapd_panel),
             id="tabs_repartition",
@@ -133,17 +118,6 @@ def bloc_repartition():
 
 def bloc_bilan():
     """Bilan énergétique — Résumé / France (carte + camembert) / AURA (placeholder)"""
-
-    # Résumé (texte rapide)
-    presentation = ui.div(
-        ui.h4("Résumé"),
-        ui.p("Synthèse de la consommation et de la production électrique par région."),
-        ui.tags.ul(
-            ui.tags.li("À gauche : carte avec cercles proportionnels (production ou consommation totales)."),
-            ui.tags.li("À droite : répartition de la production par filière pour la région choisie (ou la France entière)."),
-        ),
-        class_="pt-1"
-    )
 
     # France : Carte + Pie
     france = ui.div(
@@ -191,7 +165,6 @@ def bloc_bilan():
     return ui.card(
         ui.div({"class":"card-title"}, ui.tags.i({"class":"fa-solid fa-bolt me-2"}), "Bilan énergétique"),
         ui.navset_tab(
-            ui.nav_panel("Résumé", presentation),
             ui.nav_panel("France", france),
             ui.nav_panel("AURA", aura),
             id="tabs_bilan",
@@ -202,17 +175,6 @@ def bloc_bilan():
 
 def bloc_simulateurs():
     """3 onglets : Présentation / Analyse prédictive / Analyse comparative (+ KPI neutres)"""
-    # --- Présentation ---
-    simul_presentation = ui.div(
-        ui.h4("Résumé"),
-        ui.p("Deux simulateurs pour estimer l’impact énergétique des data centers :"),
-        ui.tags.ol(
-            ui.tags.li("Analyse prédictive : paramétrez le nombre de DC et le facteur de charge, puis comparez à la production/consommation."),
-            ui.tags.li("Analyse comparative : mettez en perspective des paliers de puissance avec des profils de consommation."),
-        ),
-        ui.p("Les encadrés en bas donnent des équivalents de production (réacteurs, barrages, éoliennes, etc.)."),
-        class_="pt-1"
-    )
 
     # --- Analyse prédictive ---
     predictive_panel = ui.layout_sidebar(
@@ -326,7 +288,6 @@ def bloc_simulateurs():
     return ui.card(
         ui.div({"class": "card-title"}, ui.strong("Simulateurs")),
         ui.navset_tab(
-            ui.nav_panel("Résumé", simul_presentation),
             ui.nav_panel("Analyse prédictive", predictive_panel),
             ui.nav_panel("Analyse comparative", comparative_panel),
             id="sim_tabs",

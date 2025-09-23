@@ -10,7 +10,6 @@ import plotly.express as px
 import folium, branca, json
 from pathlib import Path
 
-MAP_HEIGHT = 520
 
 # --------- Thème Plotly (clair/sombre)
 def _plotly_theme(is_dark: bool):
@@ -82,7 +81,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
     tiles = "cartodbdark_matter" if is_dark else "cartodbpositron"
     m = folium.Map(
         location=[54.0, 15.0], zoom_start=4, tiles=tiles,
-        control_scale=True, width="100%", height=MAP_HEIGHT
+        control_scale=True, width="100%"
     )
 
     # Choroplèthe : DC / million hab
@@ -149,7 +148,6 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
         ).add_to(m)
 
     cmap.add_to(m)
-    folium.LayerControl(collapsed=False).add_to(m)
 
     # borne carte
     try:
@@ -227,7 +225,7 @@ def server(input, output, session, app_dir: Path):
         xmax = float(data_plot["share"].max()) if len(data_plot) else 0.0
         fig.update_layout(
             margin=dict(l=10, r=10, t=30, b=10),
-            height=MAP_HEIGHT, showlegend=False, title_text="",
+            autosize=True, showlegend=False, title_text="",
             paper_bgcolor=th["paper"], plot_bgcolor=th["plot"],
             font=dict(color=th["font"], family="Poppins, Arial, sans-serif", size=13),
         )

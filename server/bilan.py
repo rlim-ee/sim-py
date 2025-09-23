@@ -85,7 +85,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, metric_key: str, dark: 
     circle_color    = COLORS["prod"] if metric_key == METRIC_PROD else COLORS["conso"]
     label_metric    = "Production" if metric_key == METRIC_PROD else "Consommation"
 
-    m = folium.Map(location=[46.8, 2.5], zoom_start=5.8, tiles=tiles, control_scale=True)
+    m = folium.Map(location=[46.8, 2.5], zoom_start=5, tiles=tiles, control_scale=True)
 
     # contours
     folium.GeoJson(

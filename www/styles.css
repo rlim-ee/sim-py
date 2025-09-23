@@ -155,19 +155,32 @@ html.theme-dark .sidebar .form-range::-moz-range-thumb{ background:#58A6FF; bord
 .panel-body{ padding:4px 2px; color:var(--panel-fg) }
 .panel-foot{ opacity:.85; margin-top:.5rem; color:var(--panel-fg) }
 
-/* wrapper carte -> hauteur commune */
+/* Wrapper carte : occupe exactement --map-h et coupe tout débordement */
 .map-wrap{
   height: var(--map-h);
   min-height: var(--map-h);
   width: 100%;
   position: relative;
+  overflow: hidden;            /* ⬅️ clé pour supprimer le vide */
 }
+
+/* Forcer 100% sur tout ce qui est dedans (iframe/folium/etc.) */
 .map-wrap iframe,
 .map-wrap .folium-map,
-.map-wrap > div{
+.map-wrap .leaflet-container,
+.map-wrap > * {
   height: 100% !important;
   width: 100% !important;
 }
+
+/* ⚠️ Neutraliser les wrappers “ratio” qui mettent padding-bottom */
+.map-wrap [style*="padding-bottom"]{
+  padding-bottom: 0 !important;
+  height: 100% !important;
+}
+
+/* (Optionnel) resserrer un peu l’espace interne */
+.panel-body { padding-bottom: 8px; }
 
 /* ---------- CARDS génériques (simulateurs) ---------- */
 .card{
@@ -314,3 +327,9 @@ html.dark .card p strong,
 html.theme-dark .card p strong {
   color: var(--text) !important;
 }
+
+
+.panel-body { padding-bottom: 8px; }
+.panel .panel-foot { margin-top: 10px; }
+
+
