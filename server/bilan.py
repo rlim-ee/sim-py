@@ -34,7 +34,7 @@ def _is_dark(input) -> bool:
 
 # ------------------ Chargement + préparation (une seule fois) ------------------
 def _load_data_prepared(app_dir: Path):
-    path = app_dir / "www" / "data" / "regions.geojson"
+    path = app_dir / "www" / "data" / "regions_simplified.geojson"
 
     # 1) Lire le GeoJSON brut (pour l’overlay contours Folium)
     gj_text = path.read_text(encoding="utf-8")
