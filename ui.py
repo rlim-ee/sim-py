@@ -450,6 +450,7 @@ def app_footer():
                 ),
             class_="footer-inner",
         ),
+        ui.p("Opération soutenue par l’État dans le cadre de l’AMI « Compétences et Métiers d’Avenir »  du programme France 2030, opéré par la Caisse des Dépôts (La Banque des Territoires).", class_="footer-text"),
         class_="app-footer",
     )
 
