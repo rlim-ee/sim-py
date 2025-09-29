@@ -47,14 +47,12 @@ def _logo_srcs() -> tuple[str, str | None, str]:
     return light, dark, logo_class
 
 LOGO_LIGHT, LOGO_DARK, LOGO_CLASS = _logo_srcs()
-# Logos partenaires (clair/sombre) – cherche automatiquement dans www/images/
+# Logos partenaires (clair/sombre)
 PARTNERS_LIGHT = _find_logo(["logos"])
 PARTNERS_DARK  = _find_logo(["logos_dark"])
 
-
 # ---------- petit helper pour un encadré déroulant ----------
-# ---------- petit helper pour un encadré déroulant ----------
-# helper encadré déroulant (remplace ta version actuelle)
+# helper encadré déroulant
 def dropcard(title: str, *children, open: bool = False):
     attrs = {"class": "dropcard"}
     if open:
@@ -73,7 +71,7 @@ def bloc_repartition():
 
     # Contenu Europe
     europe_panel = ui.div(
-        # Résumé (vide pour l’instant)
+        # Résumé 
         dropcard("Résumé — Répartition", ui.p("À compléter…")),
         ui.div(
             ui.div(
@@ -104,7 +102,7 @@ def bloc_repartition():
                        ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-ranking-star"})),
                        ui.div({"class":"kpi-title"}, "Pays leader"),
                        ui.div({"class":"kpi-value"}, ui.output_text("kpi_leader_value")),
-                       ui.p("Part de l'Allemagne dans le nombre total de DC")),
+                       ui.p("Part de l'Allemagne")),
                 class_="col"),
             ui.div(
                 ui.div({"class":"kpi-card accent-geo"},
@@ -117,7 +115,7 @@ def bloc_repartition():
         ),
     )
 
-    # FLAP-D placeholder
+    # FLAP-D
     flapd_panel = ui.div(
         dropcard("Résumé — FLAP-D", ui.p("À compléter…")),
         ui.h4("FLAP-D"),
@@ -195,7 +193,7 @@ def bloc_bilan():
         ),
     )
 
-    # AURA placeholder
+    # AURA
     aura   = ui.div(
         dropcard("Résumé — AURA", ui.p("À compléter…")),
         ui.markdown("*(à venir — indicateurs Auvergne-Rhône-Alpes : zoom régional, comparaisons, parts)*")

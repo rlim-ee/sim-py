@@ -36,11 +36,10 @@ def _is_dark(input) -> bool:
     except Exception:
         return False
 
-# ------------------ Chargement + préparation (une seule fois) ------------------
+# ------------------ Chargement + préparation  ------------------
 def _load_data_prepared(app_dir: Path):
     path = app_dir / "www" / "data" / "regions_simplified.geojson"
 
-    # 1) Lire le GeoJSON brut (pour l’overlay contours Folium)
     gj_text = path.read_text(encoding="utf-8")
 
     # 2) GeoPandas pour les valeurs et le point interne (placement des cercles)
@@ -54,19 +53,17 @@ def _load_data_prepared(app_dir: Path):
         if col in gdf.columns:
             gdf[col] = pd.to_numeric(gdf[col], errors="coerce").fillna(0.0)
 
-    # ➜ plus léger/rapide que reprojection+centroid
     rep = gdf.geometry.representative_point()
     gdf["lon"] = rep.x.astype(float)
     gdf["lat"] = rep.y.astype(float)
 
-    # 3) (Optionnel) simplifier une seule fois (tolérance très douce)
     try:
         gdf_simpl = gdf.to_crs(3857).copy()
         gdf_simpl["geometry"] = gdf_simpl.geometry.simplify(400)  # ~400 m
         gj_text_simpl = gdf_simpl.to_crs(4326).to_json()
         gj_text = gj_text_simpl
     except Exception:
-        pass  # si simplification échoue, on garde le brut
+        pass  
 
     regions = sorted(gdf["NOM"].astype(str).tolist())
     # Sommes nationales pour le pie "France"
@@ -136,14 +133,13 @@ def server(input, output, session, app_dir: Path):
     def _init_select():
         ui.update_select("fr_region", choices=["France"] + data()["regions"], selected="France")
 
-    # --------- Carte (rendu paresseux + cache HTML) ---------
+    # --------- Carte ---------
     @output
     @render.ui
     def fr_map():
-        # Ne calcule QUE si l'onglet "France" (bilan) est actif
         try:
             if input.tabs_bilan() != "France":
-                return ui.HTML("")  # pas affiché => pas de calcul
+                return ui.HTML("")  
         except Exception:
             pass
 
@@ -152,20 +148,18 @@ def server(input, output, session, app_dir: Path):
         dark   = _is_dark(input)
         key    = (metric, dark)
 
-        # prérendu/caché ?
         if key not in _map_cache:
             _map_cache[key] = _build_map_html(d["gdf"], d["gj_text"], metric, dark)
 
-        # on laisse le conteneur gérer la hauteur (CSS panel-body)
         return ui.HTML(_map_cache[key])
 
-    # --------- Camembert (rendu paresseux) ---------
+    # --------- Camembert ---------
     @output
     @sw.render_widget
     def prod_pie():
         try:
             if input.tabs_bilan() != "France":
-                return px.scatter()  # placeholder vide (pas calculé)
+                return px.scatter() 
         except Exception:
             pass
 
@@ -229,7 +223,7 @@ def server(input, output, session, app_dir: Path):
 """
         df = pd.read_csv(StringIO(csv_text), sep=";")
 
-        # Mapping couleurs (proche de ton R)
+        # Mapping couleurs
         colors = {
             "Nucléaire": "#FFE18B",
             "Hydraulique": "#2071B2",
@@ -272,7 +266,6 @@ def server(input, output, session, app_dir: Path):
                     x=dff["year"], y=dff["production"],
                     mode="none", stackgroup="one", fill="tonexty",
                     name=f, fillcolor=colors[f],
-                    # ⚠️ échapper les accolades dans une f-string : %{{x}} / %{{y}}
                     hovertemplate=f"<b>{f}</b><br>Année: %{{x}}<br>Production: %{{y:.1f}} TWh<extra></extra>",
                 )
             )
@@ -286,9 +279,9 @@ def server(input, output, session, app_dir: Path):
             )
         )
 
-        # Mise en forme (pas de titlefont direct dans xaxis/yaxis avec Plotly Python)
+        # Mise en forme 
         fig.update_layout(
-            title=None,  # <- évite le double-titre (le h4 du panneau suffit)
+            title=None, 
             xaxis=dict(
                 title=dict(text="Année", font=dict(size=14, color=font_color)),
                 tickfont=dict(size=12, color=font_color),
@@ -308,7 +301,7 @@ def server(input, output, session, app_dir: Path):
                 ),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=48, r=36, t=8, b=36),   # <- marges resserrées
+            margin=dict(l=48, r=36, t=8, b=36),   
             font=dict(color=font_color, family="Poppins, Arial, sans-serif")
             )
 
