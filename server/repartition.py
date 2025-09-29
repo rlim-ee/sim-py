@@ -1,6 +1,6 @@
-# server/repartition.py — Europe (perf + cache + dark)
+# server/repartition.py — Europe (perf + cache + dark + garde d’onglet)
 from __future__ import annotations
-from shiny import render, reactive, ui
+from shiny import render, reactive, ui, req
 import shinywidgets as sw
 
 import geopandas as gpd
@@ -11,7 +11,17 @@ import folium, branca, json
 from pathlib import Path
 
 
-# --------- Thème Plotly (clair/sombre)
+
+# ------------------ Utilitaires ------------------
+def _is_dark(input) -> bool:
+    """Retourne True si le dark mode est actif côté UI (sécurisé)."""
+    try:
+        dm = getattr(input, "darkmode", None)
+        return bool(dm()) if callable(dm) else False
+    except Exception:
+        return False
+
+
 def _plotly_theme(is_dark: bool):
     return {
         "font": "#e5e7eb" if is_dark else "#0f172a",
@@ -23,6 +33,7 @@ def _plotly_theme(is_dark: bool):
         "bar_outline": "rgba(255,255,255,.18)" if is_dark else "rgba(0,0,0,.08)",
     }
 
+
 # =========================================================
 #            Chargement unique + pré-préparation
 # =========================================================
@@ -31,18 +42,19 @@ def _load_data_prepared(app_dir: Path):
     if not geo_path.exists():
         raise FileNotFoundError(f"GeoJSON introuvable : {geo_path}")
 
-    # 1) lire le GeoJSON brut (pour l’overlay Folium) — SANS le reconvertir plus tard
+    # 1) Lire le GeoJSON (pour l’overlay Folium)
     gj_text = geo_path.read_text(encoding="utf-8")
-    gj_obj = json.loads(gj_text)
 
-    # 2) GeoDataFrame pour calculs + cercles (point représentatif = rapide et précis)
+    # 2) GeoDataFrame pour calculs + cercles
     gdf = gpd.read_file(geo_path)
     if gdf.crs is None or (getattr(gdf.crs, "to_epsg", lambda: None)() != 4326):
         gdf = gdf.to_crs(4326)
 
-    # harmoniser colonnes attendues
-    gdf = gdf.rename(columns={"name":"country", "nb_dc":"dc_total", "pop":"population"})
-    for col in ("dc_total","population","dc_per_million"):
+    # Harmoniser les colonnes attendues
+    rename_map = {"name": "country", "nb_dc": "dc_total", "pop": "population"}
+    gdf = gdf.rename(columns={k: v for k, v in rename_map.items() if k in gdf.columns})
+
+    for col in ("dc_total", "population", "dc_per_million"):
         if col in gdf.columns:
             gdf[col] = pd.to_numeric(gdf[col], errors="coerce").fillna(0.0)
 
@@ -50,18 +62,20 @@ def _load_data_prepared(app_dir: Path):
     gdf["lat"] = reps.y.astype(float)
     gdf["lon"] = reps.x.astype(float)
 
-    # (Option) simplifier contours une seule fois pour alléger le rendu
+    # Simplifier les contours (une seule fois) pour accélérer
     try:
         gdf_simpl = gdf.to_crs(3857).copy()
         gdf_simpl["geometry"] = gdf_simpl.geometry.simplify(2000)  # ~2 km
-        gj_text = gdf_simpl.to_crs(4326).to_json()  # texte GeoJSON simplifié
+        gj_text = gdf_simpl.to_crs(4326).to_json()
     except Exception:
         pass
 
-    # dataframe parts
+    # DF pour la part de DC par pays
     df_share = (
-        pd.DataFrame({"country": gdf["country"].astype(str), "dc_total": gdf["dc_total"].astype(float)})
-        .dropna()
+        pd.DataFrame({
+            "country": gdf["country"].astype(str),
+            "dc_total": gdf["dc_total"].astype(float),
+        }).dropna()
     )
     tot_dc = float(df_share["dc_total"].sum()) if not df_share.empty else 0.0
     df_share["share"] = (df_share["dc_total"] / tot_dc * 100.0) if tot_dc > 0 else 0.0
@@ -69,10 +83,11 @@ def _load_data_prepared(app_dir: Path):
 
     return {
         "gdf": gdf,
-        "gj_text": gj_text,      # on gardera ce texte tel quel pour Folium.GeoJson
+        "gj_text": gj_text,      # contours (simplifiés) pour la choroplèthe
         "df_share": df_share,
         "total_dc": tot_dc,
     }
+
 
 # =========================================================
 #                 Construction carte Folium
@@ -108,7 +123,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
         }
 
     folium.GeoJson(
-        data=json.loads(gj_text),  # on évite gdf.to_json() à chaud
+        data=json.loads(gj_text),
         name="Choroplèthe DC/million",
         style_function=style_fn,
         tooltip=folium.GeoJsonTooltip(
@@ -130,7 +145,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
         rmin, rmax = float(np.nanmin(r)), float(np.nanmax(r))
         radii = [float(np.interp(rv, (rmin, rmax), (6.0, 28.0))) for rv in r.tolist()]
 
-    circle_color = "#3b0a91"   # violet (comme avant)
+    circle_color = "#3b0a91"   # violet
     for (_, row), R in zip(gdf.iterrows(), radii):
         folium.CircleMarker(
             location=(float(row["lat"]), float(row["lon"])),
@@ -149,7 +164,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
 
     cmap.add_to(m)
 
-    # borne carte
+    # Cadre de la carte
     try:
         tb = gdf.total_bounds
         m.fit_bounds([[float(tb[1]), float(tb[0])], [float(tb[3]), float(tb[2])]])
@@ -158,13 +173,14 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
 
     return m._repr_html_()
 
+
 # =========================================================
 #                        SERVER
 # =========================================================
 def server(input, output, session, app_dir: Path):
     # caches
     _data_cache = reactive.Value(None)
-    _map_cache: dict[bool, str] = {}  # clé = is_dark
+    _map_cache: dict[bool, str] = {}  # clé = thème sombre (True/False)
 
     @reactive.calc
     def data():
@@ -174,22 +190,29 @@ def server(input, output, session, app_dir: Path):
             _data_cache.set(obj)
         return obj
 
-    # -------------- Carte (rendu paresseux + cache HTML) --------------
+    # -------------- Carte (garde d’onglet + cache HTML) --------------
     @output
     @render.ui
     def repartition_map():
-        # ne calcule la carte que si l’onglet Europe de Répartition est affiché
-        try:
-            if input.tabs_repartition() != "Europe":
-                return ui.HTML("")
-        except Exception:
-            pass
+        # Si l’onglet Europe n’est pas affiché, ne rien rendre :
+        if callable(getattr(input, "tabs_repartition", None)):
+            req(input.tabs_repartition() == "Europe")
 
-        is_dark = bool(getattr(input, "darkmode", lambda: False)())
+
+        is_dark = _is_dark(input)
+
         if is_dark not in _map_cache:
             d = data()
             _map_cache[is_dark] = _build_map_html(d["gdf"], d["gj_text"], is_dark)
+
         return ui.div(ui.HTML(_map_cache[is_dark]), class_="map-wrap")
+
+    # Invalider le cache quand on change d’onglet ou de thème
+    @reactive.effect
+    def _clear_map_cache_on_tab_or_theme():
+        _ = getattr(input, "tabs_repartition", lambda: "Europe")()
+        _ = _is_dark(input)
+        _map_cache.clear()
 
     # -------------- Barres (part du nombre de DC) ----------------------
     @output
@@ -209,8 +232,7 @@ def server(input, output, session, app_dir: Path):
         )
 
         data_plot = chart_df.sort_values("share", ascending=True)
-        is_dark = bool(getattr(input, "darkmode", lambda: False)())
-        th = _plotly_theme(is_dark)
+        th = _plotly_theme(_is_dark(input))
 
         fig = px.bar(
             data_plot,

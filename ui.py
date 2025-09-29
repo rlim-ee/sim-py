@@ -3,6 +3,96 @@ from shiny import ui
 import shinywidgets as sw
 import base64, pathlib, mimetypes
 
+HEAD_HIDE_CLIENT_ERRORS = ui.head_content(
+    # CSS : masque overlays/toasts + iframes éventuels
+    ui.tags.style("""
+/* Shiny client error/toast containers */
+[aria-label="Shiny Client Errors"],
+#shiny-client-errors,
+[id*="shiny-client-errors"],
+[class*="shiny-client-errors"],
+[class*="client-errors"],
+#shiny-notification-panel,
+.shiny-notification,
+.shiny-notification-container,
+.shiny-toast,
+.shiny-toast-container,
+.bslib-toast,
+.bslib-toast-container,
+.toast-container,
+.toast,
+iframe#__shiny_client_errors__,
+iframe[title*="Shiny Client Errors"],
+iframe[src*="client-error"],
+iframe[src*="client-errors"]{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+"""),
+    # JS : suppression en profondeur (y compris dans iframes même origine)
+    ui.tags.script("""
+(function(){
+  const SELECTORS = [
+    '[aria-label="Shiny Client Errors"]',
+    '#shiny-client-errors',
+    '[id*="shiny-client-errors"]',
+    '[class*="shiny-client-errors"]',
+    '[class*="client-errors"]',
+    '#shiny-notification-panel',
+    '.shiny-notification',
+    '.shiny-notification-container',
+    '.shiny-toast',
+    '.shiny-toast-container',
+    '.bslib-toast',
+    '.bslib-toast-container',
+    '.toast-container',
+    '.toast',
+    'iframe#__shiny_client_errors__',
+    'iframe[title*="Shiny Client Errors"]',
+    'iframe[src*="client-error"]',
+    'iframe[src*="client-errors"]'
+  ];
+  const TEXT_MATCH = [/Shiny\\s+Client\\s+Errors/i, /unexpected\\s+state/i];
+
+  function nuke(rootDoc){
+    try {
+      rootDoc.querySelectorAll(SELECTORS.join(',')).forEach(el => { try{ el.remove(); }catch(_){} });
+      // fallback par texte
+      rootDoc.querySelectorAll('body *').forEach(el=>{
+        try{
+          const t=(el.textContent||'').trim();
+          if(t && TEXT_MATCH.some(rx=>rx.test(t))) el.remove();
+        }catch(_){}
+      });
+    } catch(_) {}
+  }
+
+  function sweep(){
+    nuke(document);
+    // tenter dans les iframes même origine
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{
+        if (f.contentDocument) nuke(f.contentDocument);
+      }catch(_){}
+    });
+  }
+
+  // au chargement + mutations + périodique
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sweep, {once:true});
+  } else {
+    sweep();
+  }
+  new MutationObserver(sweep).observe(document.documentElement, {childList:true, subtree:true});
+  setInterval(sweep, 800);
+})();
+""")
+)
+
+
+
 # ====== LOGO helpers (light/dark, base64 + fallback statique) ======
 _EXTS = ("png", "svg", "jpg", "jpeg", "webp")
 
@@ -140,7 +230,7 @@ def bloc_bilan():
     """Bilan énergétique — France (carte + camembert) / AURA (placeholder)"""
 
     # France : Carte + Pie
-    france = ui.div(
+    france= ui.div(
         dropcard("Résumé — Bilan énergétique", ui.p("À compléter…")),
         ui.div(
             # Colonne GAUCHE : carte FR
@@ -149,14 +239,6 @@ def bloc_bilan():
                        ui.div({"class": "panel-head"},
                               ui.tags.i({"class": "fa-solid fa-layer-group"}), ui.h4("Consommation vs Production", class_="panel-title")),
                        ui.div(
-                           ui.div({"class": "mb-2"},
-                                  ui.input_select(
-                                      "fr_metric",
-                                      "Choisir l'indicateur à afficher :",
-                                      choices={"PR_TOT_TWH":"Production totale", "CONSO_TWH":"Consommation totale"},
-                                      selected="PR_TOT_TWH",
-                                  )
-                           ),
                            ui.output_ui("fr_map"),
                            class_="panel-body"),
                        ),
@@ -169,7 +251,7 @@ def bloc_bilan():
                               ui.tags.i({"class": "fa-solid fa-chart-pie"}), ui.h4("Production d'énergie par filière", class_="panel-title")),
                        ui.div(
                            ui.div({"class":"mb-2"},
-                                  ui.input_select("fr_region", "Choisir une région :", choices=["France"], selected="France")
+                                  ui.input_select("fr_region", "Choisir une région :", choices=["France"], selected="France"),
                            ),
                            sw.output_widget("prod_pie"),
                            class_="panel-body"),
@@ -187,7 +269,10 @@ def bloc_bilan():
                     ui.tags.i({"class": "fa-solid fa-chart-area"}),
                     ui.h4("Évolution de la production et consommation énergétique en France entre 2010 et 2024", class_="panel-title"),
                 ),
-                ui.div(sw.output_widget("area_chart"), class_="panel-body"),
+                ui.div(
+                    ui.div({"class":"mb-2"},
+                           ui.input_slider("year", "Année :", min=2014, max=2024, value=2024, step=1, width="100%")),
+                    ui.div(sw.output_widget("area_chart"), style="width:100%"), class_="panel-body", style="width:100%"),
             ),
             class_="col-12",
         ),
@@ -454,6 +539,7 @@ def app_footer():
 
 # ---------- UI principale ----------
 app_ui = ui.page_fluid(
+    HEAD_HIDE_CLIENT_ERRORS,
     ui.head_content(
         ui.tags.meta(charset="utf-8"),
         ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1"),

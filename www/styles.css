@@ -155,6 +155,38 @@ html.theme-dark .sidebar .form-range::-moz-range-thumb{ background:#58A6FF; bord
 .panel-body{ padding:4px 2px; color:var(--panel-fg) }
 .panel-foot{ opacity:.85; margin-top:.5rem; color:var(--panel-fg) }
 
+/* ton style existant */
+.panel-body { padding: 4px 2px; color: var(--panel-fg); }
+
+/* --- Plotly pleine largeur dans un panel --- */
+.panel-body .js-plotly-plot,
+.panel-body .plotly-graph-div {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+/* Assure que le conteneur d'output occupe 100% */
+.panel-body .sw-output,
+.panel-body [data-widget],
+.panel-body .anywidget,
+.panel-body .shiny-output,
+.panel-body .shiny-html-output {
+  display: block;
+  width: 100%;
+}
+
+/* Slider pleine largeur */
+.panel-body .shiny-input-container,
+.panel-body .shiny-input-slider,
+.panel-body input[type="range"] {
+  width: 100%;
+}
+
+/* Petits plus */
+.row-eq { align-items: stretch; }          /* colonnes égales */
+.panel-body { overflow-x: hidden; }        /* pas de scroll horizontal parasite */
+
+
 /* Wrapper carte : occupe exactement --map-h et coupe tout débordement */
 .map-wrap{
   height: var(--map-h);
@@ -564,3 +596,25 @@ html.theme-dark .dropcard > summary:hover{ background: #0f172a; }
   outline-offset: 2px;
 }
 
+[aria-label="Shiny Client Errors"],
+#shiny-client-errors,
+[id*="shiny-client-errors"],
+[class*="shiny-client-errors"],
+[class*="client-errors"],
+.toast-container.shiny-client-errors,
+.toast-container[data-shiny-client-errors]{
+  display:none !important;
+}
+
+/* Cache toute notif/toast Shiny au niveau global */
+#shiny-notification-panel,
+.shiny-notification,
+.shiny-notification-container,
+.shiny-toast,
+.shiny-toast-container,
+.bslib-toast,
+.bslib-toast-container,
+.toast-container,
+.toast {
+  display: none !important;
+}
