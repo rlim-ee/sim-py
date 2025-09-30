@@ -1,18 +1,22 @@
-# server/repartition.py — Europe (perf + cache + dark + garde d’onglet)
+# server/repartition.py — Europe (no-reactive + cache + dark)
 from __future__ import annotations
-from shiny import render, reactive, ui, req
+from shiny import render, ui, req
 import shinywidgets as sw
 
+from pathlib import Path
 import geopandas as gpd
-import numpy as np
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import folium, branca, json
-from pathlib import Path
+
+# =========================
+#     Cache module-level
+# =========================
+_DATA_CACHE: dict[str, dict] = {}  # clé: str(path.resolve()) -> payload dict
 
 
-
-# ------------------ Utilitaires ------------------
+# ------------------ Helpers ------------------
 def _is_dark(input) -> bool:
     """Retourne True si le dark mode est actif côté UI (sécurisé)."""
     try:
@@ -35,72 +39,21 @@ def _plotly_theme(is_dark: bool):
 
 
 # =========================================================
-#            Chargement unique + pré-préparation
-# =========================================================
-def _load_data_prepared(app_dir: Path):
-    geo_path = app_dir / "www" / "data" / "europe_map.geojson"
-    if not geo_path.exists():
-        raise FileNotFoundError(f"GeoJSON introuvable : {geo_path}")
-
-    # 1) Lire le GeoJSON (pour l’overlay Folium)
-    gj_text = geo_path.read_text(encoding="utf-8")
-
-    # 2) GeoDataFrame pour calculs + cercles
-    gdf = gpd.read_file(geo_path)
-    if gdf.crs is None or (getattr(gdf.crs, "to_epsg", lambda: None)() != 4326):
-        gdf = gdf.to_crs(4326)
-
-    # Harmoniser les colonnes attendues
-    rename_map = {"name": "country", "nb_dc": "dc_total", "pop": "population"}
-    gdf = gdf.rename(columns={k: v for k, v in rename_map.items() if k in gdf.columns})
-
-    for col in ("dc_total", "population", "dc_per_million"):
-        if col in gdf.columns:
-            gdf[col] = pd.to_numeric(gdf[col], errors="coerce").fillna(0.0)
-
-    reps = gdf.geometry.representative_point()
-    gdf["lat"] = reps.y.astype(float)
-    gdf["lon"] = reps.x.astype(float)
-
-    # Simplifier les contours (une seule fois) pour accélérer
-    try:
-        gdf_simpl = gdf.to_crs(3857).copy()
-        gdf_simpl["geometry"] = gdf_simpl.geometry.simplify(2000)  # ~2 km
-        gj_text = gdf_simpl.to_crs(4326).to_json()
-    except Exception:
-        pass
-
-    # DF pour la part de DC par pays
-    df_share = (
-        pd.DataFrame({
-            "country": gdf["country"].astype(str),
-            "dc_total": gdf["dc_total"].astype(float),
-        }).dropna()
-    )
-    tot_dc = float(df_share["dc_total"].sum()) if not df_share.empty else 0.0
-    df_share["share"] = (df_share["dc_total"] / tot_dc * 100.0) if tot_dc > 0 else 0.0
-    df_share = df_share.sort_values("share", ascending=False).reset_index(drop=True)
-
-    return {
-        "gdf": gdf,
-        "gj_text": gj_text,      # contours (simplifiés) pour la choroplèthe
-        "df_share": df_share,
-        "total_dc": tot_dc,
-    }
-
-
-# =========================================================
 #                 Construction carte Folium
 # =========================================================
 def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
     tiles = "cartodbdark_matter" if is_dark else "cartodbpositron"
     m = folium.Map(
-        location=[54.0, 15.0], zoom_start=4, tiles=tiles,
-        control_scale=True, width="100%"
+        location=[54.0, 15.0],
+        zoom_start=4,
+        tiles=tiles,
+        control_scale=True,
+        width="100%",
+        height="100%",  # remplit le wrapper .map-wrap
     )
 
-    # Choroplèthe : DC / million hab
-    vals = gdf["dc_per_million"].to_numpy(dtype=float)
+    # Choroplèthe DC / million hab
+    vals = gdf["dc_per_million"].to_numpy(dtype=float) if "dc_per_million" in gdf.columns else np.array([0.0])
     vmin = float(np.nanmin(vals)) if len(vals) else 0.0
     vmax = float(np.nanmax(vals)) if len(vals) else 1.0
     if not np.isfinite(vmin): vmin = 0.0
@@ -127,7 +80,7 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
         name="Choroplèthe DC/million",
         style_function=style_fn,
         tooltip=folium.GeoJsonTooltip(
-            fields=["country", "dc_total", "population", "dc_per_million"],
+            fields=[c for c in ["country", "dc_total", "population", "dc_per_million"] if c in gdf.columns],
             aliases=["Pays", "Nombre de DC", "Population", "DC / million hab."],
             labels=True, sticky=False,
         ),
@@ -136,31 +89,32 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
         embed=True,
     ).add_to(m)
 
-    # Cercles proportionnels au nombre total de DC
-    dc = gdf["dc_total"].to_numpy(dtype=float)
-    if float(np.nanmax(dc)) == float(np.nanmin(dc)):
-        radii = [10.0] * len(dc)
-    else:
-        r = np.sqrt(np.clip(dc, 0, None))
-        rmin, rmax = float(np.nanmin(r)), float(np.nanmax(r))
-        radii = [float(np.interp(rv, (rmin, rmax), (6.0, 28.0))) for rv in r.tolist()]
+    # Cercles proportionnels (si colonnes présentes)
+    if {"lat", "lon", "dc_total"}.issubset(gdf.columns):
+        dc = gdf["dc_total"].to_numpy(dtype=float)
+        if float(np.nanmax(dc)) == float(np.nanmin(dc)):
+            radii = [10.0] * len(dc)
+        else:
+            r = np.sqrt(np.clip(dc, 0, None))
+            rmin, rmax = float(np.nanmin(r)), float(np.nanmax(r))
+            radii = [float(np.interp(rv, (rmin, rmax), (6.0, 28.0))) for rv in r.tolist()]
 
-    circle_color = "#3b0a91"   # violet
-    for (_, row), R in zip(gdf.iterrows(), radii):
-        folium.CircleMarker(
-            location=(float(row["lat"]), float(row["lon"])),
-            radius=float(R),
-            weight=1,
-            color=circle_color,
-            fill=True,
-            fill_color=circle_color,
-            fill_opacity=0.75,
-            tooltip=folium.Tooltip(
-                f"<b>{row['country']}</b><br>"
-                f"DC (total): <b>{int(row['dc_total'])}</b><br>"
-                f"DC/million: {float(row['dc_per_million']):.1f}"
-            ),
-        ).add_to(m)
+        circle_color = "#3b0a91"
+        for (_, row), R in zip(gdf.iterrows(), radii):
+            folium.CircleMarker(
+                location=(float(row["lat"]), float(row["lon"])),
+                radius=float(R),
+                weight=1,
+                color=circle_color,
+                fill=True,
+                fill_color=circle_color,
+                fill_opacity=0.75,
+                tooltip=folium.Tooltip(
+                    f"<b>{row['country']}</b><br>"
+                    f"DC (total): <b>{int(row['dc_total'])}</b><br>"
+                    f"DC/million: {float(row.get('dc_per_million', 0.0)):.1f}"
+                ),
+            ).add_to(m)
 
     cmap.add_to(m)
 
@@ -171,54 +125,113 @@ def _build_map_html(gdf: gpd.GeoDataFrame, gj_text: str, is_dark: bool) -> str:
     except Exception:
         pass
 
-    return m._repr_html_()
+    # Neutraliser le wrapper "ratio" que folium insère parfois
+    html = m._repr_html_()
+    html = (html
+            .replace("height: 0.0%;", "height: 100%;")
+            .replace("height:0.0%;", "height: 100%;")
+            .replace("padding-bottom: 60.0%;", "padding-bottom: 0;")
+            .replace("padding-bottom: 75.0%;", "padding-bottom: 0;"))
+    return html
+
+
+# =========================================================
+#   Chargement unique + préparation (hors reactive.*)
+# =========================================================
+def _load_data_prepared(app_dir: Path) -> dict:
+    geo_path = Path(app_dir) / "www" / "data" / "europe_map.geojson"
+    if not geo_path.exists():
+        raise FileNotFoundError(f"GeoJSON introuvable : {geo_path}")
+
+    # GeoDataFrame (calculs + cercles)
+    gdf = gpd.read_file(geo_path)
+    if gdf.crs is None or (getattr(gdf.crs, "to_epsg", lambda: None)() != 4326):
+        gdf = gdf.to_crs(4326)
+
+    # Harmoniser / réduire
+    rename_map = {"name": "country", "nb_dc": "dc_total", "pop": "population"}
+    gdf = gdf.rename(columns={k: v for k, v in rename_map.items() if k in gdf.columns})
+    cols_keep = [c for c in ["country", "dc_total", "population", "dc_per_million", "geometry"] if c in gdf.columns]
+    gdf = gdf[cols_keep].copy()
+
+    for col in ("dc_total", "population", "dc_per_million"):
+        if col in gdf.columns:
+            gdf[col] = pd.to_numeric(gdf[col], errors="coerce").fillna(0.0)
+
+    reps = gdf.geometry.representative_point()
+    gdf["lat"] = reps.y.astype(float)
+    gdf["lon"] = reps.x.astype(float)
+
+    # GeoJSON simplifié
+    try:
+        gdf_simpl = gdf.to_crs(3857).copy()
+        gdf_simpl["geometry"] = gdf_simpl.geometry.simplify(2000)  # ≈2 km
+        gj_text = gdf_simpl.to_crs(4326)[
+            ["country", "dc_total", "population", "dc_per_million", "geometry"]
+        ].to_json()
+    except Exception:
+        gj_text = geo_path.read_text(encoding="utf-8")
+
+    # Part de DC par pays
+    df_share = pd.DataFrame({
+        "country": gdf["country"].astype(str),
+        "dc_total": gdf["dc_total"].astype(float),
+    }).dropna()
+    tot_dc = float(df_share["dc_total"].sum()) if not df_share.empty else 0.0
+    df_share["share"] = (df_share["dc_total"] / tot_dc * 100.0) if tot_dc > 0 else 0.0
+    df_share = df_share.sort_values("share", ascending=False).reset_index(drop=True)
+
+    # Pré-construction HTML (clair/sombre)
+    maps_html = {
+        False: _build_map_html(gdf, gj_text, is_dark=False),
+        True:  _build_map_html(gdf, gj_text, is_dark=True),
+    }
+
+    return {
+        "gdf": gdf,
+        "gj_text": gj_text,
+        "df_share": df_share,
+        "total_dc": tot_dc,
+        "maps_html": maps_html,
+    }
+
+
+def _get_data(app_dir: Path) -> dict:
+    """Retourne les données depuis un cache global non-réactif."""
+    key = str(Path(app_dir).resolve())
+    payload = _DATA_CACHE.get(key)
+    if payload is None:
+        payload = _load_data_prepared(app_dir)
+        _DATA_CACHE[key] = payload
+    return payload
 
 
 # =========================================================
 #                        SERVER
 # =========================================================
 def server(input, output, session, app_dir: Path):
-    # caches
-    _data_cache = reactive.Value(None)
-    _map_cache: dict[bool, str] = {}  # clé = thème sombre (True/False)
 
-    @reactive.calc
-    def data():
-        obj = _data_cache.get()
-        if obj is None:
-            obj = _load_data_prepared(app_dir)
-            _data_cache.set(obj)
-        return obj
-
-    # -------------- Carte (garde d’onglet + cache HTML) --------------
+    # -------- Carte Europe (aucun recalcul lourd) --------
     @output
     @render.ui
     def repartition_map():
-        # Si l’onglet Europe n’est pas affiché, ne rien rendre :
-        if callable(getattr(input, "tabs_repartition", None)):
-            req(input.tabs_repartition() == "Europe")
+        # Ne rendre que si l’onglet Europe est actif (évite courses d’état client)
+        tabs = getattr(input, "tabs_repartition", None)
+        if callable(tabs):
+            req(tabs() == "Europe")
 
+        d = _get_data(app_dir)
+        dark = _is_dark(input)
+        html = d["maps_html"][bool(dark)]
 
-        is_dark = _is_dark(input)
+        # on renvoie le wrapper (hauteur fixée par CSS .map-wrap)
+        return ui.div(ui.HTML(html), class_="map-wrap")
 
-        if is_dark not in _map_cache:
-            d = data()
-            _map_cache[is_dark] = _build_map_html(d["gdf"], d["gj_text"], is_dark)
-
-        return ui.div(ui.HTML(_map_cache[is_dark]), class_="map-wrap")
-
-    # Invalider le cache quand on change d’onglet ou de thème
-    @reactive.effect
-    def _clear_map_cache_on_tab_or_theme():
-        _ = getattr(input, "tabs_repartition", lambda: "Europe")()
-        _ = _is_dark(input)
-        _map_cache.clear()
-
-    # -------------- Barres (part du nombre de DC) ----------------------
+    # -------- Barres (part du nombre de DC) --------
     @output
     @sw.render_widget
     def dc_share_plot():
-        d = data()
+        d = _get_data(app_dir)
         df_share = d["df_share"]
         if df_share.empty:
             return px.bar(title="Aucune donnée")
@@ -266,12 +279,12 @@ def server(input, output, session, app_dir: Path):
     @output
     @render.text
     def kpi_total_dc():
-        return f"{int(data()['total_dc']):,} DC".replace(",", " ")
+        return f"{int(_get_data(app_dir)['total_dc']):,} DC".replace(",", " ")
 
     @output
     @render.text
     def kpi_leader_value():
-        df = data()["df_share"]
+        df = _get_data(app_dir)["df_share"]
         if df.empty:
             return "—"
         return f"{df.iloc[0]['share']:.1f} %"
@@ -279,7 +292,7 @@ def server(input, output, session, app_dir: Path):
     @output
     @render.text
     def kpi_leader_caption():
-        df = data()["df_share"]
+        df = _get_data(app_dir)["df_share"]
         if df.empty:
             return "Aucun pays"
         leader = df.iloc[0]
@@ -288,7 +301,7 @@ def server(input, output, session, app_dir: Path):
     @output
     @render.text
     def kpi_top10():
-        df = data()["df_share"]
+        df = _get_data(app_dir)["df_share"]
         if df.empty:
             return "—"
         return f"{float(df.head(10)['share'].sum()):.0f} %"

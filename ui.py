@@ -3,96 +3,6 @@ from shiny import ui
 import shinywidgets as sw
 import base64, pathlib, mimetypes
 
-HEAD_HIDE_CLIENT_ERRORS = ui.head_content(
-    # CSS : masque overlays/toasts + iframes éventuels
-    ui.tags.style("""
-/* Shiny client error/toast containers */
-[aria-label="Shiny Client Errors"],
-#shiny-client-errors,
-[id*="shiny-client-errors"],
-[class*="shiny-client-errors"],
-[class*="client-errors"],
-#shiny-notification-panel,
-.shiny-notification,
-.shiny-notification-container,
-.shiny-toast,
-.shiny-toast-container,
-.bslib-toast,
-.bslib-toast-container,
-.toast-container,
-.toast,
-iframe#__shiny_client_errors__,
-iframe[title*="Shiny Client Errors"],
-iframe[src*="client-error"],
-iframe[src*="client-errors"]{
-  display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-"""),
-    # JS : suppression en profondeur (y compris dans iframes même origine)
-    ui.tags.script("""
-(function(){
-  const SELECTORS = [
-    '[aria-label="Shiny Client Errors"]',
-    '#shiny-client-errors',
-    '[id*="shiny-client-errors"]',
-    '[class*="shiny-client-errors"]',
-    '[class*="client-errors"]',
-    '#shiny-notification-panel',
-    '.shiny-notification',
-    '.shiny-notification-container',
-    '.shiny-toast',
-    '.shiny-toast-container',
-    '.bslib-toast',
-    '.bslib-toast-container',
-    '.toast-container',
-    '.toast',
-    'iframe#__shiny_client_errors__',
-    'iframe[title*="Shiny Client Errors"]',
-    'iframe[src*="client-error"]',
-    'iframe[src*="client-errors"]'
-  ];
-  const TEXT_MATCH = [/Shiny\\s+Client\\s+Errors/i, /unexpected\\s+state/i];
-
-  function nuke(rootDoc){
-    try {
-      rootDoc.querySelectorAll(SELECTORS.join(',')).forEach(el => { try{ el.remove(); }catch(_){} });
-      // fallback par texte
-      rootDoc.querySelectorAll('body *').forEach(el=>{
-        try{
-          const t=(el.textContent||'').trim();
-          if(t && TEXT_MATCH.some(rx=>rx.test(t))) el.remove();
-        }catch(_){}
-      });
-    } catch(_) {}
-  }
-
-  function sweep(){
-    nuke(document);
-    // tenter dans les iframes même origine
-    document.querySelectorAll('iframe').forEach(f=>{
-      try{
-        if (f.contentDocument) nuke(f.contentDocument);
-      }catch(_){}
-    });
-  }
-
-  // au chargement + mutations + périodique
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', sweep, {once:true});
-  } else {
-    sweep();
-  }
-  new MutationObserver(sweep).observe(document.documentElement, {childList:true, subtree:true});
-  setInterval(sweep, 800);
-})();
-""")
-)
-
-
-
 # ====== LOGO helpers (light/dark, base64 + fallback statique) ======
 _EXTS = ("png", "svg", "jpg", "jpeg", "webp")
 
@@ -168,7 +78,7 @@ def bloc_repartition():
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
                               ui.tags.i({"class":"fa-solid fa-map-location-dot"}), ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
-                       ui.div(ui.div({"class": "map-wrap"}, ui.output_ui("repartition_map")), class_="panel-body")),
+                       ui.div(ui.div(ui.output_ui("repartition_map"), class_="map-wrap"), class_="panel-body")),
                 class_="col"),
             ui.div(
                 ui.div({"class": "panel"},
@@ -237,7 +147,7 @@ def bloc_bilan():
             ui.div(
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
-                              ui.tags.i({"class": "fa-solid fa-layer-group"}), ui.h4("Consommation vs Production", class_="panel-title")),
+                              ui.tags.i({"class": "fa-solid fa-layer-group"}), ui.h4("Solde énergétique par région", class_="panel-title")),
                        ui.div(
                            ui.output_ui("fr_map"),
                            class_="panel-body"),
@@ -539,7 +449,6 @@ def app_footer():
 
 # ---------- UI principale ----------
 app_ui = ui.page_fluid(
-    HEAD_HIDE_CLIENT_ERRORS,
     ui.head_content(
         ui.tags.meta(charset="utf-8"),
         ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1"),
@@ -589,6 +498,31 @@ document.addEventListener('DOMContentLoaded', () => {{
         ui.input_switch("darkmode", "Mode sombre", value=True),
         class_="topbar",
     ),
+    
+    ui.tags.script("""
+(function () {
+  function resizeAll() {
+    const plots = document.querySelectorAll('.js-plotly-plot');
+    plots.forEach(p => { try { Plotly.Plots.resize(p); } catch(e){} });
+  }
+
+  // À chaque valeur Shiny livrée, redimensionner juste après le paint
+  document.addEventListener('shiny:value', () => {
+    requestAnimationFrame(resizeAll);
+  });
+
+  // Quand on change d’onglet (Bootstrap navset), redimensionner
+  document.addEventListener('shown.bs.tab', () => {
+    setTimeout(resizeAll, 60);
+  });
+
+  // Et sur resize fenêtre
+  window.addEventListener('resize', () => {
+    requestAnimationFrame(resizeAll);
+  });
+})();
+"""),
+
 
     # Présentation générale en haut de page (plein large)
     dropcard(
