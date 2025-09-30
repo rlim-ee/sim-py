@@ -160,9 +160,7 @@ def bloc_bilan():
                        ui.div({"class": "panel-head"},
                               ui.tags.i({"class": "fa-solid fa-chart-pie"}), ui.h4("Production d'énergie par filière", class_="panel-title")),
                        ui.div(
-                           ui.div({"class":"mb-2"},
-                                  ui.input_select("fr_region", "Choisir une région :", choices=["France"], selected="France"),
-                           ),
+                           ui.div({"class":"mb-2"}, ui.output_ui("region_selector")),
                            sw.output_widget("prod_pie"),
                            class_="panel-body"),
                        ),

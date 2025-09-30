@@ -240,6 +240,21 @@ def _load_data_prepared(app_dir: Path):
         .set_index("year")[["conso", *PIE_FIELDS_TS, "prod_tot", "balance"]]
     )
 
+    filieres_map = {"nuc": "Nucléaire", "hyd": "Hydraulique", "fos": "Fossile",
+                    "eol": "Éolien", "sol": "Solaire", "autre": "Autre"}
+
+    long_by_region = {}
+    for reg in ["France"] + regions:
+        sub = df_ts[df_ts["regions"] == reg].copy()
+        sub = sub[(sub["year"] >= 2014) & (sub["year"] <= 2024)].sort_values("year")
+        if sub.empty:
+            continue
+        long_by_region[reg] = (
+            sub.melt(id_vars=["year", "conso"], value_vars=list(filieres_map.keys()),
+                     var_name="filiere", value_name="production")
+               .assign(filiere=lambda x: x["filiere"].map(filieres_map))
+        )
+    
     return {
         "gdf": gdf,
         "gj_text": gj_text,     # contours simplifiés
@@ -247,6 +262,7 @@ def _load_data_prepared(app_dir: Path):
         "years": years,
         "ts": df_ts,
         "fr_by_year": fr_by_year,
+        "long_by_region": long_by_region,
     }
 
 # ---------- Carte (choroplèthe, tooltips complets) ----------
@@ -364,24 +380,20 @@ def server(input, output, session, app_dir: Path):
     @sw.render_widget
     def prod_pie():
         d = data()
-
-        # Sécurité : si le select n’a qu’un seul choix, on le met à jour ici aussi.
-        try:
-            # on tente sur geo_select
-            cur = input.geo_select()
-            if cur is not None:
-                # impossible de lire les "choices", donc on renvoie la MàJ inconditionnelle
-                ui.update_select("geo_select", choices=["France"] + d["regions"], selected=cur or "France")
-        except Exception:
-            try:
-                cur = input.fr_region()
-                ui.update_select("fr_region", choices=["France"] + d["regions"], selected=cur or "France")
-            except Exception:
-                pass
-
         region = _get_region(input)
-        year = int(input.year())
+        year   = int(input.year())
+        dark   = _is_dark(input)
+        key    = (region, year, dark)
 
+        # Cache local à la fonction
+        if not hasattr(prod_pie, "_cache"):
+            prod_pie._cache = {}
+        cache = prod_pie._cache
+
+        if key in cache:
+            return cache[key]
+
+        # --- (Re)calcul de la figure uniquement si nécessaire ---
         if region == "France":
             row = d["fr_by_year"].loc[year]
             s_vals = [row["nuc"], row["hyd"], row["fos"], row["eol"], row["sol"], row["autre"]]
@@ -400,46 +412,65 @@ def server(input, output, session, app_dir: Path):
             df_pie, names="Filière", values="TWh", title=title, hole=0.15,
             color="Filière", color_discrete_map=PIE_COLOR_MAP,
         )
-
-        dark = _is_dark(input)
         font_color = "#F8FAFC" if dark else "#0B162C"
         fig.update_traces(textinfo="percent+label", hovertemplate="%{label}: %{value:.1f} TWh<extra></extra>")
         fig.update_layout(
-            autosize=True,
-            height=340,
+            autosize=True, height=340,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color=font_color, family="Poppins, Arial, sans-serif"),
             legend=dict(title="", font=dict(color=font_color)),
             title=dict(font=dict(color=font_color)),
             margin=dict(t=44, r=8, b=8, l=8),
         )
+
+        cache[key] = fig
         return fig
+            
 
     # ---------------- Évolution ----------------
     @output
     @sw.render_widget
     def area_chart():
-        d = data()
-        geo = _get_region(input)
+        d        = data()
+        region   = _get_region(input)
         year_sel = int(input.year())
+        dark     = _is_dark(input)
+        key      = (region, year_sel, dark)
 
-        df = d["ts"]
-        df_g = (df[df["regions"] == "France"] if geo == "France" else df[df["regions"] == geo]).copy()
-        df_g = df_g[(df_g["year"] >= 2014) & (df_g["year"] <= 2024)].sort_values("year")
+        if not hasattr(area_chart, "_cache"):
+            area_chart._cache = {}
+        cache = area_chart._cache
 
-        filieres_map = {"nuc": "Nucléaire", "hyd": "Hydraulique", "fos": "Fossile",
-                        "eol": "Éolien", "sol": "Solaire", "autre": "Autre"}
+        if key in cache:
+            return cache[key]
+
+        # --- Données pré-calculées ---
+        df_long = d["long_by_region"].get(region)
+        if df_long is None:
+            # fallback (devrait être rare si long_by_region est bien rempli)
+            df = d["ts"]
+            sub = (df[df["regions"] == ("France" if region == "France" else region)]
+                   .copy())
+            sub = sub[(sub["year"] >= 2014) & (sub["year"] <= 2024)].sort_values("year")
+            filieres_map = {"nuc": "Nucléaire", "hyd": "Hydraulique", "fos": "Fossile",
+                            "eol": "Éolien", "sol": "Solaire", "autre": "Autre"}
+            df_long = (
+                sub.melt(id_vars=["year", "conso"], value_vars=list(filieres_map.keys()),
+                         var_name="filiere", value_name="production")
+                   .assign(filiere=lambda x: x["filiere"].map(filieres_map))
+            )
+
+        # Série conso pour la ligne pointillée
+        df_conso = (d["ts"][d["ts"]["regions"] == region]
+                    if region != "France" else d["ts"][d["ts"]["regions"] == "France"]).copy()
+        df_conso = df_conso[(df_conso["year"] >= 2014) & (df_conso["year"] <= 2024)].sort_values("year")
+
         colors = {"Nucléaire": "#FFE18B", "Hydraulique": "#2071B2", "Fossile": "#313334",
                   "Éolien": "#8DCDBF", "Solaire": "#F4902E", "Autre": "#14682D"}
-
-        df_long = df_g.melt(id_vars=["year", "conso"], value_vars=list(filieres_map.keys()),
-                            var_name="filiere", value_name="production") \
-                     .assign(filiere=lambda x: x["filiere"].map(filieres_map))
-
-        dark = _is_dark(input)
         font_color = "#F8FAFC" if dark else "#0B162C"
         grid_color = "rgba(203,213,225,.26)" if dark else "rgba(15,23,42,.08)"
 
+        import plotly.graph_objects as go
         fig = go.Figure()
         for f in ["Nucléaire", "Hydraulique", "Fossile", "Éolien", "Solaire", "Autre"]:
             dff = df_long[df_long["filiere"] == f]
@@ -451,7 +482,7 @@ def server(input, output, session, app_dir: Path):
             ))
 
         fig.add_trace(go.Scatter(
-            x=df_g["year"], y=df_g["conso"], mode="lines",
+            x=df_conso["year"], y=df_conso["conso"], mode="lines",
             name="Consommation", line=dict(color="red", width=3, dash="dash"),
             hovertemplate="<b>Consommation</b><br>Année: %{x}<br>%{y:.1f} TWh<extra></extra>",
         ))
@@ -459,8 +490,7 @@ def server(input, output, session, app_dir: Path):
         fig.add_vline(x=year_sel, line_width=2, line_dash="dot", line_color="red")
         fig.update_xaxes(rangeslider=dict(visible=False), range=[2014, 2024])
         fig.update_layout(
-            autosize=True,
-            height=250,
+            autosize=True, height=250,
             xaxis=dict(title=dict(text="Année", font=dict(size=13, color=font_color)),
                        tickfont=dict(size=11, color=font_color),
                        gridcolor=grid_color, zerolinecolor=grid_color),
@@ -473,4 +503,15 @@ def server(input, output, session, app_dir: Path):
             margin=dict(l=36, r=16, t=8, b=8),
             font=dict(color=font_color, family="Poppins, Arial, sans-serif"),
         )
+
+        cache[key] = fig
         return fig
+
+
+    @output
+    @render.ui
+    def region_selector():
+        d = data()
+        return ui.input_select(
+            "fr_region", "Choisir une région", choices=["France"] + d["regions"], selected="France"
+        )
