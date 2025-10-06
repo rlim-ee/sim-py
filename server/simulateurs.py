@@ -6,7 +6,7 @@ import shinywidgets as sw
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
+# import plotly.express as px  # plus utilisé ci-dessous
 
 # --------- Couleurs ---------
 COLORS = {
@@ -106,7 +106,32 @@ def server(input, output, session):
                          title_font=dict(color=_theme_text_color()))
         return fig
 
-    # ---- Conso totale aux paliers
+    # ========= Pré-calculs statiques (pas dépendants des inputs) =========
+    @reactive.calc
+    def _tendances_prepared():
+        # lignes (hist + projections) déjà fusionnées
+        conso_hist2 = conso_hist.rename(columns={"Conso": "Value"}).assign(Type="Consommation")
+        prod_hist2  = prod_hist.rename(columns={"Prod":  "Value"}).assign(Type="Production")
+        conso_proj  = conso_p[["Annee","Ref"]].rename(columns={"Ref": "Value"}).assign(Type="Consommation")
+        prod_proj   = prod_p [["Annee","Ref"]].rename(columns={"Ref": "Value"}).assign(Type="Production")
+
+        data_lines = pd.concat([conso_hist2, prod_hist2, conso_proj, prod_proj], ignore_index=True)
+
+        data_ribbons = pd.concat([
+            conso_p[["Annee"]].assign(ymin=conso_p["Min"], ymax=conso_p["Max"], Type="Consommation"),
+            prod_p [["Annee"]].assign(ymin=prod_p ["Min"], ymax=prod_p ["Max"], Type="Production"),
+        ], ignore_index=True)
+
+        # Conversion en arrays pour accès ultra-rapide
+        out = {
+            "lines_conso": data_lines.query("Type=='Consommation'")[["Annee","Value"]].to_numpy(),
+            "lines_prod":  data_lines.query("Type=='Production'")  [["Annee","Value"]].to_numpy(),
+            "ribbon_conso": data_ribbons.query("Type=='Consommation'")[["Annee","ymin","ymax"]].to_numpy(),
+            "ribbon_prod":  data_ribbons.query("Type=='Production'")  [["Annee","ymin","ymax"]].to_numpy(),
+        }
+        return out
+
+    # ---- Conso totale aux paliers (dépend de nb_dc & facteur)
     @reactive.calc
     def consommation_totale():
         nb_dc = input.nb_dc()
@@ -123,66 +148,74 @@ def server(input, output, session):
     @output
     @sw.render_widget
     def energiePlot():
-        conso_hist2 = conso_hist.assign(Type="Consommation").rename(columns={"Conso": "Value"})
-        prod_hist2  = prod_hist.assign(Type="Production").rename(columns={"Prod": "Value"})
-        conso_proj  = conso_p.assign(Type="Consommation").rename(columns={"Ref": "Value"})
-        prod_proj   = prod_p.assign(Type="Production").rename(columns={"Ref": "Value"})
+        key = ("energiePlot", _is_dark())
+        if not hasattr(energiePlot, "_cache"):
+            energiePlot._cache = {}
+        cache = energiePlot._cache
+        if key in cache:
+            return cache[key]
 
-        data_lines = pd.concat([
-            conso_hist2[["Annee","Value","Type"]],
-            prod_hist2 [["Annee","Value","Type"]],
-            conso_proj [["Annee","Value","Type"]],
-            prod_proj  [["Annee","Value","Type"]],
-        ])
-        data_ribbons = pd.concat([
-            conso_p[["Annee"]].assign(ymin=conso_p["Min"], ymax=conso_p["Max"], Type="Consommation"),
-            prod_p [["Annee"]].assign(ymin=prod_p ["Min"], ymax=prod_p ["Max"], Type="Production"),
-        ])
+        d = _tendances_prepared()
 
         fig = go.Figure()
-        # Rubans
-        for typ in ("Consommation", "Production"):
-            d = data_ribbons[data_ribbons["Type"] == typ]
-            fill = "rgba(31,111,235,0.14)" if typ == "Consommation" else "rgba(46,160,67,0.16)"
-            fig.add_trace(go.Scatter(
-                x=list(d["Annee"]) + list(d["Annee"][::-1]),
-                y=list(d["ymax"]) + list(d["ymin"][::-1]),
-                fill="toself", mode="none", fillcolor=fill, hoverinfo="skip", name=f"Zone {typ}"
-            ))
-        # Lignes
+        # ruban consommation
+        anni_c, ymin_c, ymax_c = d["ribbon_conso"][:,0], d["ribbon_conso"][:,1], d["ribbon_conso"][:,2]
         fig.add_trace(go.Scatter(
-            x=data_lines.query("Type=='Consommation'")["Annee"],
-            y=data_lines.query("Type=='Consommation'")["Value"],
+            x=np.r_[anni_c, anni_c[::-1]],
+            y=np.r_[ymax_c, ymin_c[::-1]],
+            fill="toself", mode="none", fillcolor="rgba(31,111,235,0.14)",
+            hoverinfo="skip", name="Zone Consommation"
+        ))
+        # ruban production
+        anni_p, ymin_p, ymax_p = d["ribbon_prod"][:,0], d["ribbon_prod"][:,1], d["ribbon_prod"][:,2]
+        fig.add_trace(go.Scatter(
+            x=np.r_[anni_p, anni_p[::-1]],
+            y=np.r_[ymax_p, ymin_p[::-1]],
+            fill="toself", mode="none", fillcolor="rgba(46,160,67,0.16)",
+            hoverinfo="skip", name="Zone Production"
+        ))
+        # lignes
+        fig.add_trace(go.Scatter(
+            x=d["lines_conso"][:,0], y=d["lines_conso"][:,1],
             mode="lines", name="Consommation",
             line=dict(color=_consumption_color(), width=2.8)))
         fig.add_trace(go.Scatter(
-            x=data_lines.query("Type=='Production'")["Annee"],
-            y=data_lines.query("Type=='Production'")["Value"],
+            x=d["lines_prod"][:,0], y=d["lines_prod"][:,1],
             mode="lines", name="Production",
             line=dict(color=COLORS["production"], width=2.8)))
 
         fig.add_vline(x=2025, line_dash="dash", line_color="rgba(148,163,184,.6)")
         fig.add_vline(x=2035, line_dash="dash", line_color="rgba(148,163,184,.6)")
         fig.update_layout(legend_title_text="", xaxis_title=None, yaxis_title="TWh")
-        return _style_fig(fig, height=420)
+
+        cache[key] = _style_fig(fig, height=420)
+        return cache[key]
 
     # ---- Graphique principal (2025–2035)
     @output
     @sw.render_widget
     def energy_plot():
-        conso_tot = consommation_totale()
         nb_dc = input.nb_dc()
-        conso_sub = conso_p[(conso_p["Annee"] >= 2025) & (conso_p["Annee"] <= 2035)]
+        conso_tot = consommation_totale()
 
+        key = ("energy_plot", nb_dc, float(input.facteur_charge()), _is_dark())
+        if not hasattr(energy_plot, "_cache"):
+            energy_plot._cache = {}
+        cache = energy_plot._cache
+        if key in cache:
+            return cache[key]
+
+        conso_sub = conso_p[(conso_p["Annee"] >= 2025) & (conso_p["Annee"] <= 2035)]
         p = go.Figure()
-        # Bandes production
+
+        # Bandes production (min/max)
         p.add_trace(go.Scatter(
-            x=list(production_data["Annee"]) + list(production_data["Annee"][::-1]),
-            y=list(production_data["Max"])   + list(production_data["Min"][::-1]),
+            x=np.r_[production_data["Annee"].values, production_data["Annee"].values[::-1]],
+            y=np.r_[production_data["Max"].values,   production_data["Min"].values[::-1]],
             fill="toself", mode="none", fillcolor="rgba(46,160,67,0.16)",
             line=dict(color="rgba(0,0,0,0)"), name="Zone de production", hoverinfo="skip"
         ))
-        # Production
+        # Production courbes
         p.add_trace(go.Scatter(x=production_data["Annee"], y=production_data["Ref"], mode="lines",
                                line=dict(color=COLORS["production"], width=4),
                                name="Projection de production de référence"))
@@ -198,8 +231,8 @@ def server(input, output, session):
                                line=dict(color=_consumption_color(), width=4),
                                name="Projection de consommation de référence"))
         p.add_trace(go.Scatter(
-            x=list(conso_sub["Annee"]) + list(conso_sub["Annee"][::-1]),
-            y=list(conso_sub["Max"])   + list(conso_sub["Min"][::-1]),
+            x=np.r_[conso_sub["Annee"].values, conso_sub["Annee"].values[::-1]],
+            y=np.r_[conso_sub["Max"].values,   conso_sub["Min"].values[::-1]],
             fill="toself", mode="none", fillcolor="rgba(31,111,235,0.14)",
             line=dict(color="rgba(0,0,0,0)"), name="Zone de consommation", hoverinfo="skip"
         ))
@@ -214,25 +247,27 @@ def server(input, output, session):
             hovertemplate="<b>Consommation simulée</b><br>Année: %{x}<br>Consommation: %{y:.1f} TWh/an<extra></extra>",
         ))
 
-        # Annotations
-        p.add_annotation(x=production_data["Annee"].max(),
-                         y=float(production_data["Ref"].iloc[-1]) + 3,
+        # Annotations (légères, pas de dépendance)
+        p.add_annotation(x=production_data["Annee"].iat[-1],
+                         y=float(production_data["Ref"].iat[-1]) + 3,
                          text="<b>Production de référence</b>", showarrow=False,
                          font=dict(color=COLORS["production"], size=13))
-        p.add_annotation(x=consommation_data["Annee"].max(),
-                         y=float(consommation_data["Ref"].iloc[-1]) + 3,
+        p.add_annotation(x=consommation_data["Annee"].iat[-1],
+                         y=float(consommation_data["Ref"].iat[-1]) + 3,
                          text="<b>Consommation de référence</b>", showarrow=False,
                          font=dict(color=_consumption_color(), size=13))
 
         p.update_layout(xaxis_title="Année", yaxis_title="Énergie (TWh/an)")
-        return _style_fig(p)
+
+        cache[key] = _style_fig(p)
+        return cache[key]
 
     # ---- Infos & équivalents
     @render.text
     def info_conso_totale():
         nb_dc = input.nb_dc()
         facteur = input.facteur_charge() / 100.0
-        conso_dc_2035 = dc_data.loc[dc_data["Annee"] == 2035, "Conso"].iloc[0] * nb_dc * facteur
+        conso_dc_2035 = dc_data.loc[dc_data["Annee"] == 2035, "Conso"].iat[0] * nb_dc * facteur
         conso_totale_2035 = consommation_actuelle + conso_dc_2035
         return f"{conso_totale_2035:.0f} TWh"
 
@@ -240,14 +275,12 @@ def server(input, output, session):
     NUC_REACTORS_TOTAL = 56
     AURA_KM2 = 69_711
 
-    capacities = {
-        "nuke": 8.2, "hydro": 1.5, "wind": 0.004, "solar": 0.00004, "coal": 3.0, "bio": 0.1
-    }
+    capacities = {"nuke": 8.2, "hydro": 1.5, "wind": 0.004, "solar": 0.00004, "coal": 3.0, "bio": 0.1}
 
     def calculate_equivalent(source: str) -> int:
         nb_dc = input.nb_dc() or 1
         facteur = input.facteur_charge() / 100.0
-        conso_2035_twh = float(dc_data.loc[dc_data["Annee"] == 2035, "Conso"].iloc[0] * nb_dc * facteur)
+        conso_2035_twh = float(dc_data.loc[dc_data["Annee"] == 2035, "Conso"].iat[0] * nb_dc * facteur)
         return int(round(conso_2035_twh / capacities[source]))
 
     @render.text
@@ -306,7 +339,7 @@ def server(input, output, session):
         )
 
     # ============================
-    # Simulation 2
+    # Simulation 2 (optimisée)
     # ============================
     consommation_habitants = pd.DataFrame({
         "Pays": [
@@ -321,29 +354,35 @@ def server(input, output, session):
         ignore_index=True
     )
 
+    # dictionnaire rapide pour textos
+    _conso_dict = dict(zip(consommation_habitants["Pays"], consommation_habitants["Conso_MWh"]))
+
     dc_paliers = pd.DataFrame({
         "Nom": ["15 MW", "200 MW", "400 MW", "1 GW"],
         "Puissance_MW": [15, 200, 400, 1000],
     })
     dc_paliers["Conso_MWh_An"] = dc_paliers["Puissance_MW"] * 24 * 365
+    dc_labels = dc_paliers["Nom"].tolist()
+    dc_conso = dc_paliers["Conso_MWh_An"].to_numpy(dtype=float)  # shape (4,)
 
     palette_colors = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#84CC16", "#F97316"]
     dc_1gw_conso = 8_760_000  # MWh/an
 
+    # ---- Textes rapides (évite DataFrame .loc à chaque fois)
     @render.text
-    def france_1gw():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"].values
-        return f"{int(round(dc_1gw_conso / v[0])):,}".replace(",", " ") if len(v) else ""
+    def france_1gw(): 
+        v = _conso_dict.get("France (68,29 M)")
+        return f"{int(round(dc_1gw_conso / v)):,}".replace(",", " ") if v else ""
 
     @render.text
     def qatar_1gw():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"].values
-        return f"{int(round(dc_1gw_conso / v[0])):,}".replace(",", " ") if len(v) else ""
+        v = _conso_dict.get("Qatar (2,66 M)")
+        return f"{int(round(dc_1gw_conso / v)):,}".replace(",", " ") if v else ""
 
     @render.text
     def mali_1gw():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"].values
-        return f"{int(round(dc_1gw_conso / v[0])):,}".replace(",", " ") if len(v) else ""
+        v = _conso_dict.get("Mali (28,24 M)")
+        return f"{int(round(dc_1gw_conso / v)):,}".replace(",", " ") if v else ""
 
     @render.text
     def france_pop(): return "Population totale : 68 290 000"
@@ -354,20 +393,20 @@ def server(input, output, session):
 
     @render.text
     def france_pct():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("France"), "Conso_MWh"].values
-        pct = round((dc_1gw_conso / v[0]) / 68_290_000 * 100, 2)
+        v = _conso_dict.get("France (68,29 M)")
+        pct = round((dc_1gw_conso / v) / 68_290_000 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @render.text
     def qatar_pct():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Qatar"), "Conso_MWh"].values
-        pct = round((dc_1gw_conso / v[0]) / 2_660_000 * 100, 2)
+        v = _conso_dict.get("Qatar (2,66 M)")
+        pct = round((dc_1gw_conso / v) / 2_660_000 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @render.text
     def mali_pct():
-        v = consommation_habitants.loc[consommation_habitants["Pays"].str.contains("Mali"), "Conso_MWh"].values
-        pct = round((dc_1gw_conso / v[0]) / 28_243_609 * 100, 2)
+        v = _conso_dict.get("Mali (28,24 M)")
+        pct = round((dc_1gw_conso / v) / 28_243_609 * 100, 2)
         return f"Soit {pct} % de la population totale du pays"
 
     @output
@@ -380,103 +419,91 @@ def server(input, output, session):
             selected=["Mondial"],
         )
 
+    # ---- Barplot (broadcasting NumPy + go.Bar)
+    def _scale_labels(max_val: float):
+        if max_val >= 1e6:
+            return 1e6, "Nombre d'habitants équivalents (en millions)", " millions"
+        if max_val >= 1e3:
+            return 1e3, "Nombre d'habitants équivalents (en milliers)", " milliers"
+        return 1, "Nombre d'habitants équivalents", ""
+
     @output
     @sw.render_widget
     def barplot():
         sel = input.pays_selection() or ["Mondial"]
-        selected_data = consommation_habitants[consommation_habitants["Pays"].isin(sel)].copy()
-        if selected_data.empty:
-            return px.bar(title="Sélectionnez au moins un profil")
+        vals = [(_p, _conso_dict[_p]) for _p in sel if _p in _conso_dict]
+        if not vals:
+            fig = go.Figure()
+            fig.update_layout(title_text="Sélectionnez au moins un profil")
+            return _style_fig(fig, height=420)
 
-        comparison = (
-            selected_data.assign(key=1)
-            .merge(dc_paliers.assign(key=1), on="key")
-            .drop(columns=["key"])
-        )
-        comparison["Habitants_equivalents"] = comparison["Conso_MWh_An"] / comparison["Conso_MWh"]
-        comparison["DC"] = pd.Categorical(comparison["Nom"], categories=dc_paliers["Nom"], ordered=True)
-        comparison["NomPays"] = (
-            comparison["Pays"].str.replace(r" \((.*)\)", "", regex=True)
-            + " (" + comparison["Conso_MWh"].astype(str) + " MWh/an)"
-        )
+        pays_names = [v[0] for v in vals]
+        pays_conso = np.array([v[1] for v in vals], dtype=float)  # shape (k,)
 
-        max_val = float(comparison["Habitants_equivalents"].max())
-        if max_val >= 1e6:
-            scale_factor, y_title, hover_suffix = 1e6, "Nombre d'habitants équivalents (en millions)", " millions"
-        elif max_val >= 1e3:
-            scale_factor, y_title, hover_suffix = 1e3, "Nombre d'habitants équivalents (en milliers)", " milliers"
-        else:
-            scale_factor, y_title, hover_suffix = 1, "Nombre d'habitants équivalents", ""
-        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale_factor
+        # Habitants équivalents: (4 x 1) / (1 x k) -> (4 x k)
+        he = dc_conso[:, None] / pays_conso[None, :]
+        max_val = float(he.max())
+        scale_factor, y_title, hover_suffix = _scale_labels(max_val)
+        he_scaled = he / scale_factor
 
-        unique_pays = list(dict.fromkeys(comparison["NomPays"]))
-        colors = {p: palette_colors[i % len(palette_colors)] for i, p in enumerate(unique_pays)}
+        # Couleurs stables par pays
+        color_map = {p: palette_colors[i % len(palette_colors)] for i, p in enumerate(pays_names)}
 
-        fig = px.bar(
-            comparison, x="DC", y="Habitants_equivalents_scaled", color="NomPays",
-            color_discrete_map=colors, title="Nombre d'habitants équivalents par palier"
-        )
+        # Figure
+        fig = go.Figure()
+        for j, p in enumerate(pays_names):
+            fig.add_trace(go.Bar(
+                x=dc_labels, y=he_scaled[:, j], name=f"{p}",
+                marker=dict(color=color_map[p]),
+                hovertemplate=("Profil : " + p +
+                               "<br>Palier : %{x}<br>Habitants équivalents : %{y:,.2f}" +
+                               hover_suffix + "<extra></extra>")
+            ))
+
         fig.update_layout(legend_title_text="",
                           xaxis_title="Paliers de puissance du Data Center de Eybens",
                           yaxis_title=y_title, barmode="group")
-        fig.update_traces(
-            hovertemplate="Profil : %{fullData.name}<br>"
-                          "Palier : %{x}<br>"
-                          "Habitants équivalents : %{y:,.2f}" + hover_suffix + "<extra></extra>"
-        )
         return _style_fig(fig, height=460)
 
     @output
     @sw.render_widget
     def barplot_personalisee():
-        # récupère les deux entrées perso
-        def _collect():
-            rows = []
-            for i in (1, 2):
-                nom = getattr(input, f"nom_perso_{i}")()
-                val = getattr(input, f"val_perso_{i}")()
-                unit = getattr(input, f"unit_perso_{i}")()
-                if not nom or val is None:
-                    continue
-                if unit == "kWh/an": mwh = val / 1000.0
-                elif unit == "MWh/an": mwh = val
-                else: mwh = val * 1000.0
-                rows.append({"Pays": nom, "Conso_MWh": mwh})
-            return pd.DataFrame(rows)
+        # collecte persos → DataFrame minimal
+        rows = []
+        for i in (1, 2):
+            nom = getattr(input, f"nom_perso_{i}")()
+            val = getattr(input, f"val_perso_{i}")()
+            unit = getattr(input, f"unit_perso_{i}")()
+            if not nom or val is None:
+                continue
+            if unit == "kWh/an": mwh = val / 1000.0
+            elif unit == "MWh/an": mwh = val
+            else: mwh = val * 1000.0  # GWh/an
+            rows.append((nom, float(mwh)))
 
-        custom_data = _collect()
-        if custom_data.empty:
-            return px.bar(title="Ajoutez des entrées dans la sidebar")
+        if not rows:
+            fig = go.Figure()
+            fig.update_layout(title_text="Ajoutez des entrées dans la sidebar")
+            return _style_fig(fig, height=420)
 
-        comparison = (
-            custom_data.assign(key=1)
-            .merge(dc_paliers.assign(key=1), on="key")
-            .drop(columns=["key"])
-        )
-        comparison["Habitants_equivalents"] = comparison["Conso_MWh_An"] / comparison["Conso_MWh"]
-        comparison["DC"] = pd.Categorical(comparison["Nom"], categories=dc_paliers["Nom"], ordered=True)
+        noms = [r[0] for r in rows]
+        conso = np.array([r[1] for r in rows], dtype=float)  # (m,)
+        he = dc_conso[:, None] / conso[None, :]               # (4 x m)
+        max_val = float(he.max())
+        scale_factor, y_title, hover_suffix = _scale_labels(max_val)
+        he_scaled = he / scale_factor
 
-        max_val = float(comparison["Habitants_equivalents"].max())
-        if max_val >= 1e6:
-            scale_factor, y_title, hover_suffix = 1e6, "Nombre d'individus équivalents (en millions)", " millions"
-        elif max_val >= 1e3:
-            scale_factor, y_title, hover_suffix = 1e3, "Nombre d'individus équivalents (en milliers)", " milliers"
-        else:
-            scale_factor, y_title, hover_suffix = 1, "Nombre d'individus équivalents", ""
-        comparison["Habitants_equivalents_scaled"] = comparison["Habitants_equivalents"] / scale_factor
+        fig = go.Figure()
+        for j, name in enumerate(noms):
+            fig.add_trace(go.Bar(
+                x=dc_labels, y=he_scaled[:, j], name=name,
+                hovertemplate=("Nom : " + name +
+                               "<br>Palier : %{x}<br>Individus équivalents : %{y:,.2f}" +
+                               hover_suffix + "<extra></extra>")
+            ))
 
-        fig = px.bar(
-            comparison, x="DC", y="Habitants_equivalents_scaled", color="Pays",
-            title="Nombre d'individus équivalents — projections Data One",
-            color_discrete_sequence=["#3B82F6", "#22C55E", "#F59E0B", "#EF4444",
-                                    "#8B5CF6", "#06B6D4", "#84CC16", "#F97316"]
-        )
         fig.update_layout(legend_title_text="",
                           xaxis_title="Paliers de puissance du Data Center de Eybens",
-                          yaxis_title=y_title, barmode="group")
-        fig.update_traces(
-            hovertemplate="Nom : %{fullData.name}<br>"
-                          "Palier : %{x}<br>"
-                          "Habitants équivalents : %{y:,.2f}" + hover_suffix + "<extra></extra>"
-        )
+                          yaxis_title=y_title, barmode="group",
+                          title="Nombre d'individus équivalents — projections Data One")
         return _style_fig(fig, height=420)

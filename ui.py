@@ -77,7 +77,7 @@ def bloc_repartition():
             ui.div(
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
-                              ui.tags.i({"class":"fa-solid fa-map-location-dot"}), ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
+                              ui.tags.i({"class":"fa-solid fa-map-location-dot"}), ui.h4("Répartition des data centers en Europe", class_="panel-title")),
                        ui.div(ui.div(ui.output_ui("repartition_map"), class_="map-wrap"), class_="panel-body")),
                 class_="col"),
             ui.div(
@@ -95,7 +95,7 @@ def bloc_repartition():
                        ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-bolt"})),
                        ui.div({"class":"kpi-title"}, "Data centers recensés"),
                        ui.div({"class":"kpi-value"}, ui.output_text("kpi_total_dc")),
-                       ui.p("Nombre total de data centres recensés.", class_="mb-0")),
+                       ui.p("Nombre total de data centres recensés", class_="mb-0")),
                 class_="col"),
             ui.div(
                 ui.div({"class":"kpi-card accent-rank"},
@@ -109,7 +109,7 @@ def bloc_repartition():
                        ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-globe"})),
                        ui.div({"class":"kpi-title"}, "Concentration géographique"),
                        ui.div({"class":"kpi-value"}, ui.output_text("kpi_top10")),
-                       ui.p("Part des 10 premiers pays en nombre de DC.", class_="mb-0")),
+                       ui.p("Part des 10 premiers pays", class_="mb-0")),
                 class_="col"),
             class_="row gap-4 mt-3",
         ),
@@ -146,8 +146,11 @@ def bloc_bilan():
             # Colonne GAUCHE : carte FR
             ui.div(
                 ui.div({"class": "panel"},
-                       ui.div({"class": "panel-head"},
-                              ui.tags.i({"class": "fa-solid fa-layer-group"}), ui.h4("Solde énergétique par région", class_="panel-title")),
+                       ui.div(
+                           {"class": "panel-head"},
+                           ui.tags.i({"class": "fa-solid fa-layer-group"}),
+                           ui.div(ui.output_text("map_title"), class_="panel-title"),
+                           ),
                        ui.div(
                            ui.output_ui("fr_map"),
                            class_="panel-body"),
@@ -157,8 +160,11 @@ def bloc_bilan():
             # Colonne DROITE : camembert
             ui.div(
                 ui.div({"class": "panel"},
-                       ui.div({"class": "panel-head"},
-                              ui.tags.i({"class": "fa-solid fa-chart-pie"}), ui.h4("Production d'énergie par filière", class_="panel-title")),
+                       ui.div(
+                           {"class": "panel-head"},
+                           ui.tags.i({"class": "fa-solid fa-chart-area"}),
+                           ui.div(ui.output_text("pie_title"), class_="panel-title"),
+                           ),
                        ui.div(
                            ui.div({"class":"mb-2"}, ui.output_ui("region_selector")),
                            sw.output_widget("prod_pie"),
@@ -175,8 +181,8 @@ def bloc_bilan():
                 ui.div(
                     {"class": "panel-head"},
                     ui.tags.i({"class": "fa-solid fa-chart-area"}),
-                    ui.h4("Évolution de la production et consommation énergétique en France entre 2010 et 2024", class_="panel-title"),
-                ),
+                    ui.div(ui.output_text("area_title"), class_="panel-title"),
+                    ),
                 ui.div(
                     ui.div({"class":"mb-2"},
                            ui.input_slider("year", "Année :", min=2014, max=2024, value=2024, step=1, width="100%")),

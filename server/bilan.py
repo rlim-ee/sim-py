@@ -7,7 +7,6 @@ import shinywidgets as sw
 import pandas as pd
 import geopandas as gpd
 import folium
-import plotly.express as px
 import plotly.graph_objects as go
 import json
 from io import StringIO
@@ -212,24 +211,24 @@ France\t2024\t442,3\t361,7\t75,1\t20\t46,9\t24,8\t10,5
 # ---------- Chargement + préparation ----------
 def _load_data_prepared(app_dir: Path):
     path = app_dir / "www" / "data" / "regions_simplified.geojson"
-    gj_text = path.read_text(encoding="utf-8")
 
+    # Lire + simplifier plus agressivement (↓ taille HTML)
     gdf = gpd.read_file(path)
     if gdf.crs is None:
         gdf = gdf.set_crs(4326)
     elif gdf.crs.to_epsg() != 4326:
         gdf = gdf.to_crs(4326)
 
-    rep = gdf.geometry.representative_point()
-    gdf["lon"] = rep.x.astype(float)
-    gdf["lat"] = rep.y.astype(float)
-
     try:
-        gdf_simpl = gdf.to_crs(3857).copy()
-        gdf_simpl["geometry"] = gdf_simpl.geometry.simplify(400)
-        gj_text = gdf_simpl.to_crs(4326).to_json()
+        # Simplification en mètres (WebMercator) + retour WGS84
+        gdf2 = gdf.to_crs(3857).copy()
+        gdf2["geometry"] = gdf2.geometry.simplify(2000, preserve_topology=True)  # tolérance ↑
+        gdf = gdf2.to_crs(4326)
     except Exception:
         pass
+
+    # GeoJSON "squelette" (géométrie + NOM seulement), pour éviter pandas->to_json à chaque rendu
+    gjson_base = json.loads(gdf[["NOM", "geometry"]].to_json())
 
     df_ts = _load_timeseries_df()
     regions = sorted([r for r in df_ts["regions"].unique() if r != "France"])
@@ -254,10 +253,9 @@ def _load_data_prepared(app_dir: Path):
                      var_name="filiere", value_name="production")
                .assign(filiere=lambda x: x["filiere"].map(filieres_map))
         )
-    
+
     return {
-        "gdf": gdf,
-        "gj_text": gj_text,     # contours simplifiés
+        "gjson_base": gjson_base,   # squelette pour folium
         "regions": regions,
         "years": years,
         "ts": df_ts,
@@ -265,38 +263,52 @@ def _load_data_prepared(app_dir: Path):
         "long_by_region": long_by_region,
     }
 
-# ---------- Carte (choroplèthe, tooltips complets) ----------
-def _build_balance_choropleth_html(
-    gdf_base: gpd.GeoDataFrame, df_year: pd.DataFrame, dark: bool
+# ---------- Carte: build rapide depuis gjson_base ----------
+def _build_balance_choropleth_html_from_base(
+    gjson_base: dict, df_year: pd.DataFrame, dark: bool
 ) -> str:
-    # Join (exclure France), et reconstruire un GeoJSON avec les indicateurs dans properties
-    df_reg = df_year[df_year["regions"] != "France"].copy()
-    df_reg = df_reg.rename(columns={"regions": "NOM"})
-    gdf = gdf_base.merge(
-        df_reg[["NOM", "conso", "prod_tot", "balance"]],
-        on="NOM", how="left"
-    ).copy()
 
-    # bornes et palette
-    vmin = float(np.nanmin(gdf["balance"])) if len(gdf) else -1.0
-    vmax = float(np.nanmax(gdf["balance"])) if len(gdf) else 1.0
-    vmax = max(vmax, 0.1); vmin = min(vmin, -0.1)
+    # mapping NOM -> indicateurs
+    sub = df_year[df_year["regions"] != "France"]
+    mvals = sub.set_index("regions")[["conso", "prod_tot", "balance"]].to_dict("index")
+
+    # bornes palette
+    if len(mvals):
+        vmin = float(min(v["balance"] for v in mvals.values()))
+        vmax = float(max(v["balance"] for v in mvals.values()))
+    else:
+        vmin, vmax = -1.0, 1.0
+    vmax = max(vmax, 0.1)
+    vmin = min(vmin, -0.1)
+
     cmap = branca.colormap.LinearColormap(
         colors=["#DC2626", "#F3F4F6", "#16A34A"], vmin=vmin, vmax=vmax
     )
     cmap.caption = "Solde (TWh)"
 
-    # champs texte pour tooltips
-    def fmt(x): 
-        try: return f"{float(x):,.1f}".replace(",", " ")
-        except: return "0,0"
+    def fmt(x):
+        try:
+            return f"{float(x):,.1f}".replace(",", " ")
+        except Exception:
+            return "0,0"
 
-    gdf["prod_txt"] = gdf["prod_tot"].apply(fmt)
-    gdf["conso_txt"] = gdf["conso"].apply(fmt)
-    gdf["balance_txt"] = gdf["balance"].apply(fmt)
+    # reconstruire un GeoJSON avec propriétés enrichies
+    features = []
+    for feat in gjson_base["features"]:
+        nom = feat["properties"].get("NOM")
+        vals = mvals.get(nom, {"conso": 0.0, "prod_tot": 0.0, "balance": 0.0})
+        props = {
+            "NOM": nom,
+            "conso": float(vals["conso"]),
+            "prod_tot": float(vals["prod_tot"]),
+            "balance": float(vals["balance"]),
+            "prod_txt": fmt(vals["prod_tot"]),
+            "conso_txt": fmt(vals["conso"]),
+            "balance_txt": fmt(vals["balance"]),
+        }
+        features.append({"type": "Feature", "geometry": feat["geometry"], "properties": props})
 
-    # GeoJSON dynamique avec indicateurs
-    gjson = json.loads(gdf[["NOM","conso","prod_tot","balance","prod_txt","conso_txt","balance_txt","geometry"]].to_json())
+    gjson = {"type": "FeatureCollection", "features": features}
 
     tiles = "cartodbdark_matter" if dark else "cartodbpositron"
     contour_color = "#6B7280" if not dark else "#94A3B8"
@@ -315,9 +327,9 @@ def _build_balance_choropleth_html(
         style_function=_style_fn,
         highlight_function=lambda feat: {"weight": 2, "color": highlight_color, "fillOpacity": 0.85},
         tooltip=folium.features.GeoJsonTooltip(
-            fields=["NOM","prod_txt","conso_txt","balance_txt"],
-            aliases=["Région","Production (TWh)","Consommation (TWh)","Solde (TWh)"],
-            localize=True, sticky=False, labels=True
+            fields=["NOM", "prod_txt", "conso_txt", "balance_txt"],
+            aliases=["Région", "Production (TWh)", "Consommation (TWh)", "Solde (TWh)"],
+            localize=True, sticky=False, labels=True,
         ),
     ).add_to(m)
 
@@ -364,8 +376,9 @@ def server(input, output, session, app_dir: Path):
 
         if key not in cache:
             df_year = d["ts"][d["ts"]["year"] == year]
-            cache[key] = _build_balance_choropleth_html(d["gdf"], df_year, dark)
+            cache[key] = _build_balance_choropleth_html_from_base(d["gjson_base"], df_year, dark)
 
+        # (Pas de clic sur la carte → aucun JS injecté)
         return ui.HTML(cache[key])
 
     @reactive.effect
@@ -385,47 +398,41 @@ def server(input, output, session, app_dir: Path):
         dark   = _is_dark(input)
         key    = (region, year, dark)
 
-        # Cache local à la fonction
         if not hasattr(prod_pie, "_cache"):
             prod_pie._cache = {}
         cache = prod_pie._cache
-
         if key in cache:
             return cache[key]
 
-        # --- (Re)calcul de la figure uniquement si nécessaire ---
         if region == "France":
             row = d["fr_by_year"].loc[year]
-            s_vals = [row["nuc"], row["hyd"], row["fos"], row["eol"], row["sol"], row["autre"]]
-            title = f"Production par filière — France — {year}"
+            values = [row["nuc"], row["hyd"], row["fos"], row["eol"], row["sol"], row["autre"]]
+            title = None
         else:
             row = d["ts"][(d["ts"]["regions"] == region) & (d["ts"]["year"] == year)]
             if row.empty:
-                s_vals = [0, 0, 0, 0, 0, 0]
+                values = [0, 0, 0, 0, 0, 0]
             else:
                 rr = row.iloc[0]
-                s_vals = [rr[k] for k in PIE_FIELDS_TS]
-            title = f"Production par filière — {region} — {year}"
+                values = [rr[k] for k in PIE_FIELDS_TS]
+            title = None
 
-        df_pie = pd.DataFrame({"Filière": PIE_LABELS_FR, "TWh": s_vals})
-        fig = px.pie(
-            df_pie, names="Filière", values="TWh", title=title, hole=0.15,
-            color="Filière", color_discrete_map=PIE_COLOR_MAP,
-        )
         font_color = "#F8FAFC" if dark else "#0B162C"
-        fig.update_traces(textinfo="percent+label", hovertemplate="%{label}: %{value:.1f} TWh<extra></extra>")
+        fig = go.Figure(data=[go.Pie(
+            labels=PIE_LABELS_FR, values=values, hole=0.15,
+            hovertemplate="%{label}: %{value:.1f} TWh<extra></extra>",
+            sort=False, marker=dict(colors=[PIE_COLOR_MAP[l] for l in PIE_LABELS_FR])
+        )])
+        fig.update_traces(textinfo="percent+label")
         fig.update_layout(
-            autosize=True, height=340,
+            title=title, autosize=True, height=340,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color=font_color, family="Poppins, Arial, sans-serif"),
             legend=dict(title="", font=dict(color=font_color)),
-            title=dict(font=dict(color=font_color)),
             margin=dict(t=44, r=8, b=8, l=8),
         )
-
         cache[key] = fig
         return fig
-            
 
     # ---------------- Évolution ----------------
     @output
@@ -440,17 +447,13 @@ def server(input, output, session, app_dir: Path):
         if not hasattr(area_chart, "_cache"):
             area_chart._cache = {}
         cache = area_chart._cache
-
         if key in cache:
             return cache[key]
 
-        # --- Données pré-calculées ---
         df_long = d["long_by_region"].get(region)
         if df_long is None:
-            # fallback (devrait être rare si long_by_region est bien rempli)
             df = d["ts"]
-            sub = (df[df["regions"] == ("France" if region == "France" else region)]
-                   .copy())
+            sub = df[df["regions"] == ("France" if region == "France" else region)].copy()
             sub = sub[(sub["year"] >= 2014) & (sub["year"] <= 2024)].sort_values("year")
             filieres_map = {"nuc": "Nucléaire", "hyd": "Hydraulique", "fos": "Fossile",
                             "eol": "Éolien", "sol": "Solaire", "autre": "Autre"}
@@ -460,7 +463,6 @@ def server(input, output, session, app_dir: Path):
                    .assign(filiere=lambda x: x["filiere"].map(filieres_map))
             )
 
-        # Série conso pour la ligne pointillée
         df_conso = (d["ts"][d["ts"]["regions"] == region]
                     if region != "France" else d["ts"][d["ts"]["regions"] == "France"]).copy()
         df_conso = df_conso[(df_conso["year"] >= 2014) & (df_conso["year"] <= 2024)].sort_values("year")
@@ -470,7 +472,6 @@ def server(input, output, session, app_dir: Path):
         font_color = "#F8FAFC" if dark else "#0B162C"
         grid_color = "rgba(203,213,225,.26)" if dark else "rgba(15,23,42,.08)"
 
-        import plotly.graph_objects as go
         fig = go.Figure()
         for f in ["Nucléaire", "Hydraulique", "Fossile", "Éolien", "Solaire", "Autre"]:
             dff = df_long[df_long["filiere"] == f]
@@ -507,7 +508,7 @@ def server(input, output, session, app_dir: Path):
         cache[key] = fig
         return fig
 
-
+    # ---------------- Select Région ----------------
     @output
     @render.ui
     def region_selector():
@@ -515,3 +516,30 @@ def server(input, output, session, app_dir: Path):
         return ui.input_select(
             "fr_region", "Choisir une région", choices=["France"] + d["regions"], selected="France"
         )
+
+    # ---------------- Titres dynamiques ----------------
+    @output
+    @render.text
+    def map_title():
+        y = 2024
+        year_fn = getattr(input, "year", None)
+        if callable(year_fn):
+            try:
+                y = int(year_fn())
+            except Exception:
+                pass
+        return f"Solde énergétique par région — {y}"
+
+    @output
+    @render.text
+    def area_title():
+        region = _get_region(input)
+        return f"Évolution de la production et de la consommation énergétique — {region} (2014–2024)"
+
+
+    @output
+    @render.text
+    def pie_title():
+        region = _get_region(input)
+        year   = int(input.year())
+        return f"Production d’énergie par filière — {region} — {year}"
