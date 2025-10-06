@@ -6,18 +6,17 @@ import shinywidgets as sw
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-# import plotly.express as px  # plus utilisé ci-dessous
 
 # --------- Couleurs ---------
 COLORS = {
-    "consumption": "#1F6FEB",    # clair
+    "consumption": "#1F6FEB",    
     "consumption_dark": "#58A6FF",
     "production":  "#2EA043",
     "accent":      "#F97316",
 }
 
 # ============================
-# Données (identiques)
+# Données 
 # ============================
 consommation_actuelle = 442  # TWh (2025)
 
@@ -67,7 +66,7 @@ prod_p = pd.DataFrame({
 # ============================
 def server(input, output, session):
 
-    # -- helpers thème : basé sur le switch `darkmode` (True/False)
+    # -- helpers thème --
     def _is_dark() -> bool:
         try:
             return bool(input.darkmode())
@@ -106,10 +105,10 @@ def server(input, output, session):
                          title_font=dict(color=_theme_text_color()))
         return fig
 
-    # ========= Pré-calculs statiques (pas dépendants des inputs) =========
+    # ========= Pré-calculs statiques =========
     @reactive.calc
     def _tendances_prepared():
-        # lignes (hist + projections) déjà fusionnées
+        # Préparation des données pour le graphique tendances 2000–2050
         conso_hist2 = conso_hist.rename(columns={"Conso": "Value"}).assign(Type="Consommation")
         prod_hist2  = prod_hist.rename(columns={"Prod":  "Value"}).assign(Type="Production")
         conso_proj  = conso_p[["Annee","Ref"]].rename(columns={"Ref": "Value"}).assign(Type="Consommation")
@@ -122,7 +121,6 @@ def server(input, output, session):
             prod_p [["Annee"]].assign(ymin=prod_p ["Min"], ymax=prod_p ["Max"], Type="Production"),
         ], ignore_index=True)
 
-        # Conversion en arrays pour accès ultra-rapide
         out = {
             "lines_conso": data_lines.query("Type=='Consommation'")[["Annee","Value"]].to_numpy(),
             "lines_prod":  data_lines.query("Type=='Production'")  [["Annee","Value"]].to_numpy(),
@@ -247,7 +245,7 @@ def server(input, output, session):
             hovertemplate="<b>Consommation simulée</b><br>Année: %{x}<br>Consommation: %{y:.1f} TWh/an<extra></extra>",
         ))
 
-        # Annotations (légères, pas de dépendance)
+        # Annotations)
         p.add_annotation(x=production_data["Annee"].iat[-1],
                          y=float(production_data["Ref"].iat[-1]) + 3,
                          text="<b>Production de référence</b>", showarrow=False,
@@ -339,7 +337,7 @@ def server(input, output, session):
         )
 
     # ============================
-    # Simulation 2 (optimisée)
+    # Simulation 2 : Habitants équivalents
     # ============================
     consommation_habitants = pd.DataFrame({
         "Pays": [
@@ -363,12 +361,12 @@ def server(input, output, session):
     })
     dc_paliers["Conso_MWh_An"] = dc_paliers["Puissance_MW"] * 24 * 365
     dc_labels = dc_paliers["Nom"].tolist()
-    dc_conso = dc_paliers["Conso_MWh_An"].to_numpy(dtype=float)  # shape (4,)
+    dc_conso = dc_paliers["Conso_MWh_An"].to_numpy(dtype=float) 
 
     palette_colors = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#84CC16", "#F97316"]
     dc_1gw_conso = 8_760_000  # MWh/an
 
-    # ---- Textes rapides (évite DataFrame .loc à chaque fois)
+    # ---- Textes rapides
     @render.text
     def france_1gw(): 
         v = _conso_dict.get("France (68,29 M)")
@@ -419,7 +417,7 @@ def server(input, output, session):
             selected=["Mondial"],
         )
 
-    # ---- Barplot (broadcasting NumPy + go.Bar)
+    # ---- Barplot
     def _scale_labels(max_val: float):
         if max_val >= 1e6:
             return 1e6, "Nombre d'habitants équivalents (en millions)", " millions"
@@ -468,7 +466,7 @@ def server(input, output, session):
     @output
     @sw.render_widget
     def barplot_personalisee():
-        # collecte persos → DataFrame minimal
+
         rows = []
         for i in (1, 2):
             nom = getattr(input, f"nom_perso_{i}")()
@@ -487,8 +485,8 @@ def server(input, output, session):
             return _style_fig(fig, height=420)
 
         noms = [r[0] for r in rows]
-        conso = np.array([r[1] for r in rows], dtype=float)  # (m,)
-        he = dc_conso[:, None] / conso[None, :]               # (4 x m)
+        conso = np.array([r[1] for r in rows], dtype=float)  
+        he = dc_conso[:, None] / conso[None, :]               
         max_val = float(he.max())
         scale_factor, y_title, hover_suffix = _scale_labels(max_val)
         he_scaled = he / scale_factor

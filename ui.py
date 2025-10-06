@@ -1,9 +1,9 @@
-# ui.py — Dashboard Shiny (Cartes + Graphiques + Simulateurs)
+# ui.py — Dashboard Shiny 
 from shiny import ui
 import shinywidgets as sw
 import base64, pathlib, mimetypes
 
-# ====== LOGO helpers (light/dark, base64 + fallback statique) ======
+# ====== LOGO helpers ======
 _EXTS = ("png", "svg", "jpg", "jpeg", "webp")
 
 def _data_uri_for(path: pathlib.Path) -> str | None:
@@ -47,19 +47,17 @@ def _logo_srcs() -> tuple[str, str | None, str]:
     return light, dark, logo_class
 
 LOGO_LIGHT, LOGO_DARK, LOGO_CLASS = _logo_srcs()
-# Logos partenaires (clair/sombre)
 PARTNERS_LIGHT = _find_logo(["logos"])
 PARTNERS_DARK  = _find_logo(["logos_dark"])
 
-# ---------- petit helper pour un encadré déroulant ----------
-# helper encadré déroulant
+# ---------- helper encadré déroulant ----------
 def dropcard(title: str, *children, open: bool = False):
     attrs = {"class": "dropcard"}
     if open:
-        attrs["open"] = "open"  # <details open>
+        attrs["open"] = "open"
     return ui.tags.details(
         ui.tags.summary(title),
-        ui.div(*children, class_="dropbody"),   # <- wrapper avec padding
+        ui.div(*children, class_="dropbody"),  
         **attrs,
     )
 
@@ -139,7 +137,7 @@ def bloc_repartition():
 def bloc_bilan():
     """Bilan énergétique — France (carte + camembert) / AURA (placeholder)"""
 
-    # France : Carte + Pie
+    # France
     france= ui.div(
         dropcard("Résumé — Bilan énergétique", ui.p("À compléter…")),
         ui.div(
@@ -224,7 +222,7 @@ def bloc_simulateurs():
             class_="sidebar",
         ),
 
-        # --- Résumé détaillé (ton texte) ---
+        # --- Résumé détaillé ---
         dropcard(
             "Résumé — Analyse prédictive",
             ui.div(
@@ -348,7 +346,7 @@ def bloc_simulateurs():
             class_="sidebar",
         ),
 
-        # --- Résumé détaillé (ton 2e texte) ---
+        # --- Résumé détaillé ---
         dropcard(
             "Résumé — Analyse comparative",
             ui.div(
@@ -489,6 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {{
   if (sw) sw.addEventListener('change', apply);
 }});
         """),
+        
         ui.tags.title("Matérialités du numérique"),
         ui.tags.link(rel="icon", href=LOGO_LIGHT, type="image/png"),
     ),

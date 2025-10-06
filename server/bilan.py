@@ -1,4 +1,4 @@
-# server/bilan.py — Carte choroplèthe (solde), camembert & évolution 2014–2024
+# server/bilan.py
 from __future__ import annotations
 
 from shiny import render, reactive, ui
@@ -212,7 +212,7 @@ France\t2024\t442,3\t361,7\t75,1\t20\t46,9\t24,8\t10,5
 def _load_data_prepared(app_dir: Path):
     path = app_dir / "www" / "data" / "regions_simplified.geojson"
 
-    # Lire + simplifier plus agressivement (↓ taille HTML)
+    # Lire + simplifier
     gdf = gpd.read_file(path)
     if gdf.crs is None:
         gdf = gdf.set_crs(4326)
@@ -222,7 +222,7 @@ def _load_data_prepared(app_dir: Path):
     try:
         # Simplification en mètres (WebMercator) + retour WGS84
         gdf2 = gdf.to_crs(3857).copy()
-        gdf2["geometry"] = gdf2.geometry.simplify(2000, preserve_topology=True)  # tolérance ↑
+        gdf2["geometry"] = gdf2.geometry.simplify(2000, preserve_topology=True) 
         gdf = gdf2.to_crs(4326)
     except Exception:
         pass
@@ -255,7 +255,7 @@ def _load_data_prepared(app_dir: Path):
         )
 
     return {
-        "gjson_base": gjson_base,   # squelette pour folium
+        "gjson_base": gjson_base,  
         "regions": regions,
         "years": years,
         "ts": df_ts,
@@ -263,7 +263,7 @@ def _load_data_prepared(app_dir: Path):
         "long_by_region": long_by_region,
     }
 
-# ---------- Carte: build rapide depuis gjson_base ----------
+# ---------- Carte ----------
 def _build_balance_choropleth_html_from_base(
     gjson_base: dict, df_year: pd.DataFrame, dark: bool
 ) -> str:
@@ -292,7 +292,6 @@ def _build_balance_choropleth_html_from_base(
         except Exception:
             return "0,0"
 
-    # reconstruire un GeoJSON avec propriétés enrichies
     features = []
     for feat in gjson_base["features"]:
         nom = feat["properties"].get("NOM")
@@ -348,7 +347,6 @@ def server(input, output, session, app_dir: Path):
             _data_cache.set(obj)
         return obj
 
-    # Remplir le select (geo_select ou fr_region)
     @reactive.effect
     def _init_selects():
         d = data()
@@ -361,7 +359,7 @@ def server(input, output, session, app_dir: Path):
             except Exception:
                 pass
 
-    # ---------------- Carte (choroplèthe solde) ----------------
+    # ---------------- Carte ----------------
     @output
     @render.ui
     def fr_map():
@@ -378,7 +376,6 @@ def server(input, output, session, app_dir: Path):
             df_year = d["ts"][d["ts"]["year"] == year]
             cache[key] = _build_balance_choropleth_html_from_base(d["gjson_base"], df_year, dark)
 
-        # (Pas de clic sur la carte → aucun JS injecté)
         return ui.HTML(cache[key])
 
     @reactive.effect
