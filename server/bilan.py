@@ -222,12 +222,12 @@ def _load_data_prepared(app_dir: Path):
     try:
         # Simplification en mètres (WebMercator) + retour WGS84
         gdf2 = gdf.to_crs(3857).copy()
-        gdf2["geometry"] = gdf2.geometry.simplify(2000, preserve_topology=True) 
+        gdf2["geometry"] = gdf2.geometry.simplify(2000, preserve_topology=True)
         gdf = gdf2.to_crs(4326)
     except Exception:
         pass
 
-    # GeoJSON "squelette" (géométrie + NOM seulement), pour éviter pandas->to_json à chaque rendu
+    # GeoJSON "squelette"
     gjson_base = json.loads(gdf[["NOM", "geometry"]].to_json())
 
     df_ts = _load_timeseries_df()
@@ -255,7 +255,7 @@ def _load_data_prepared(app_dir: Path):
         )
 
     return {
-        "gjson_base": gjson_base,  
+        "gjson_base": gjson_base,
         "regions": regions,
         "years": years,
         "ts": df_ts,
@@ -263,7 +263,7 @@ def _load_data_prepared(app_dir: Path):
         "long_by_region": long_by_region,
     }
 
-# ---------- Carte ----------
+# ---------- Carte (choroplèthe solde) ----------
 def _build_balance_choropleth_html_from_base(
     gjson_base: dict, df_year: pd.DataFrame, dark: bool
 ) -> str:
@@ -310,7 +310,7 @@ def _build_balance_choropleth_html_from_base(
     gjson = {"type": "FeatureCollection", "features": features}
 
     tiles = "cartodbdark_matter" if dark else "cartodbpositron"
-    contour_color = "#6B7280" if not dark else "#94A3B8"
+    contour_color = "#FFFFFF" if not dark else "#FFFFFF"
     highlight_color = "#111827" if not dark else "#E2E8F0"
 
     m = folium.Map(location=[46.8, 2.5], zoom_start=5, tiles=tiles, control_scale=True, width="100%")
@@ -359,7 +359,7 @@ def server(input, output, session, app_dir: Path):
             except Exception:
                 pass
 
-    # ---------------- Carte ----------------
+    # ---------------- Carte (choroplèthe solde) ----------------
     @output
     @render.ui
     def fr_map():
@@ -532,7 +532,6 @@ def server(input, output, session, app_dir: Path):
     def area_title():
         region = _get_region(input)
         return f"Évolution de la production et de la consommation énergétique — {region} (2014–2024)"
-
 
     @output
     @render.text

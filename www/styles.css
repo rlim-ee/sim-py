@@ -128,6 +128,25 @@ html.dark .sidebar .form-control:focus, html.dark .sidebar .form-select:focus{bo
 .kpi-eq .kpi-card{height:var(--kpi-h-sm);min-height:var(--kpi-h-sm)}
 @media (min-width:992px){.kpi-eq .kpi-card{height:var(--kpi-h-lg);min-height:var(--kpi-h-lg)}}
 
+/* ---- Note "surface_info" ---- */
+.surface-note{
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--brand);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 8px 0 2px;
+}
+.surface-note em{ color: var(--muted); }
+
+/* accentue un peu en dark */
+html.dark .surface-note{
+  background: #0b1220;         
+  border-color: #2a3a4d;
+}
+
+
 /* ---------- METRICS ---------- */
 .metric{
   display:flex;flex-direction:column;gap:8px;background:var(--card);color:var(--text);
@@ -169,7 +188,6 @@ html.dark .dropcard{background:var(--panel-bg);color:var(--panel-fg)}
 .js-plotly-plot .plotly .modebar{background:transparent;border:0}
 html.dark .js-plotly-plot .plotly text{fill:#e5e7eb !important}
 
-/* éviter qu'un wrapper impose une largeur fixe inline */
 .shiny-output-widget,
 .plotly, .plotly-html-widget, .plotly-graph-div {
   width: 100% !important;

@@ -183,11 +183,12 @@ def bloc_bilan():
                     ),
                 ui.div(
                     ui.div({"class":"mb-2"},
-                           ui.input_slider("year", "Année :", min=2014, max=2024, value=2024, step=1, width="100%")),
+                           ui.input_slider("year", "Année :", min=2014, max=2024, value=2024, step=1, width="100%", sep=""),),
                     ui.div(sw.output_widget("area_chart"), style="width:100%"), class_="panel-body", style="width:100%"),
             ),
             class_="col-12",
         ),
+
     )
 
     # AURA

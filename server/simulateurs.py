@@ -325,15 +325,29 @@ def server(input, output, session):
     @output
     @render.ui
     def surface_info():
-        return ui.HTML(
-            """
-            <p><em><strong>Note :</strong> La surface indiquée pour l'éolien correspond à la surface totale mobilisée
-            (espacement, sécurité), qui n'est pas entièrement artificialisée.</em></p>
-            <p><em>Pour le solaire, la surface correspond à une estimation plus proche de la surface réellement
-            artificialisée au sol.</em></p>
-            <p style="opacity:.8"><em>Le pourcentage affiché est calculé par rapport à une surface de référence de
-            <strong>69 711 km²</strong> (Région Auvergne-Rhône-Alpes).</em></p>
-            """
+        return ui.div(
+            ui.p(
+                ui.em(
+                    ui.strong("Note : "),
+                    "La surface indiquée pour l'éolien correspond à la surface totale mobilisée ",
+                    "(espacement, sécurité), qui n'est pas entièrement artificialisée."
+                )
+            ),
+            ui.p(
+                ui.em(
+                    "Pour le solaire, la surface correspond à une estimation plus proche ",
+                    "de la surface réellement artificialisée au sol."
+                )
+            ),
+            ui.p(
+                ui.em(
+                    "Le pourcentage affiché est calculé par rapport à une surface de référence de ",
+                    ui.strong("69 711 km²"),
+                    " (Région Auvergne-Rhône-Alpes)."
+                ),
+                style="opacity:.9"
+            ),
+            class_="surface-note"
         )
 
     # ============================
