@@ -67,62 +67,122 @@ def dropcard(title: str, *children, open: bool = False):
 
 # ---------- Blocs UI réutilisables ----------
 def bloc_repartition():
-    """Navset Répartition : Europe (map+barres+KPI) / FLAP-D (placeholder)"""
+    """Navset Répartition : Europe (map+barres+KPI) / FLAP-D"""
 
-    # Contenu Europe
+    # --- Europe ---
     europe_panel = ui.div(
-        # Résumé 
         dropcard("Résumé — Répartition", ui.p("À compléter…")),
         ui.div(
             ui.div(
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
-                              ui.tags.i({"class":"fa-solid fa-map-location-dot"}), ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
+                              ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+                              ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
                        ui.div(ui.div(ui.output_ui("repartition_map"), class_="map-wrap"), class_="panel-body")),
                 class_="col"),
             ui.div(
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
-                              ui.tags.i({"class":"fa-solid fa-chart-bar"}), ui.h4("Part du nombre des DC en Europe", class_="panel-title")),
+                              ui.tags.i({"class": "fa-solid fa-chart-bar"}),
+                              ui.h4("Part du nombre des DC en Europe", class_="panel-title")),
                        ui.div(sw.output_widget("dc_share_plot"), class_="panel-body"),
-                       ui.div("Répartition proportionnelle par pays, illustrant la dominance de certains marchés.", class_="panel-foot")),
+                       ui.div("Répartition proportionnelle par pays.", class_="panel-foot")),
                 class_="col"),
             class_="row gap-4 row-eq",
         ),
         ui.div(
             ui.div(
-                ui.div({"class":"kpi-card accent-bolt"},
-                       ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-bolt"})),
-                       ui.div({"class":"kpi-title"}, "Data centers recensés"),
-                       ui.div({"class":"kpi-value"}, ui.output_text("kpi_total_dc")),
+                ui.div({"class": "kpi-card accent-bolt"},
+                       ui.div({"class": "kpi-icon"}, ui.tags.i({"class": "fa-solid fa-bolt"})),
+                       ui.div({"class": "kpi-title"}, "Data centers recensés"),
+                       ui.div({"class": "kpi-value"}, ui.output_text("kpi_total_dc")),
                        ui.p("Nombre total de data centres recensés.", class_="mb-0")),
-                class_="col"),
-            ui.div(
-                ui.div({"class":"kpi-card accent-rank"},
-                       ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-ranking-star"})),
-                       ui.div({"class":"kpi-title"}, "Pays leader"),
-                       ui.div({"class":"kpi-value"}, ui.output_text("kpi_leader_value")),
-                       ui.p("Part de l'Allemagne")),
-                class_="col"),
-            ui.div(
-                ui.div({"class":"kpi-card accent-geo"},
-                       ui.div({"class":"kpi-icon"}, ui.tags.i({"class":"fa-solid fa-globe"})),
-                       ui.div({"class":"kpi-title"}, "Concentration géographique"),
-                       ui.div({"class":"kpi-value"}, ui.output_text("kpi_top10")),
-                       ui.p("Part des 10 premiers pays en nombre de DC.", class_="mb-0")),
                 class_="col"),
             class_="row gap-4 mt-3",
         ),
     )
 
-    # FLAP-D
+    # --- FLAP-D --- 
     flapd_panel = ui.div(
-        dropcard("Résumé — FLAP-D", ui.p("À compléter…")),
-        ui.h4("FLAP-D"),
-        ui.p("Espace réservé pour les hubs Francfort, Londres, Amsterdam, Paris, Dublin (à venir)."),
+        dropcard(
+            "Résumé — FLAP-D",
+            ui.div(
+                ui.p(
+            "Cette section présente la répartition des Data Centers dans les cinq grands "
+            "hubs européens que l’on regroupe sous l’acronyme FLAP-D : Francfort, Londres, "
+            "Amsterdam, Paris et Dublin. Ces zones concentrent la majorité des capacités "
+            "d’hébergement et de connectivité en Europe."
+        ),
+        ui.p(
+            "La carte interactive permet d’explorer la position géographique des Data Centers, "
+            "leur puissance électrique et leur surface estimée. Les bulles sont redimensionnées "
+            "automatiquement selon la surface, et colorées en fonction de leur capacité électrique."
+        ),
+        ui.p(
+            "Autour de chaque ville principale, un regroupement automatique est appliqué pour "
+            "inclure les communes limitrophes hébergeant des Data Centers (par exemple "
+            "Saint-Denis, Courbevoie ou Slough). Ce mécanisme permet de représenter "
+            "fidèlement chaque pôle géographique sans nécessiter une liste manuelle."
+        ),
+        ui.p(
+            "Le tableau de synthèse présente les indicateurs clés pour chaque hub : nombre total "
+            "de Data Centers, surfaces moyennes et totales, puissances moyenne et médiane ainsi "
+            "que le PUE moyen. Chaque indicateur est accompagné d’une pastille colorée indiquant "
+            "le niveau de complétude des données (bleu = très bon, orange = moyen, rouge = limité)."
+        ),
+        ui.p(
+            "Vous pouvez trier le tableau en cliquant sur les intitulés de colonnes pour comparer "
+            "visuellement les hubs selon différents critères."
+        ),
+        style="font-size: 15px; line-height: 1.55;"
+            ),
+            
+        ),
+
+        ui.div(
+            {"class": "panel"},
+            ui.div({"class": "panel-head"},
+                ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+                ui.h4("Carte des Data Centers FLAP-D", class_="panel-title")),
+            ui.div(
+                {"class": "panel-body"},
+                ui.div(
+                    {"style": "background: #f9f9f9; padding: 16px; border-radius: 8px;"},
+
+                    # === Boutons FLAP-D (ordonnés FLAPD) ===
+                    ui.div(
+                        {"class": "row gap-2 mb-3"},
+
+                        ui.div(ui.input_action_button("go_frankfurt",  "🇩🇪 Frankfurt am Main",
+                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+
+                        ui.div(ui.input_action_button("go_london",     "🇬🇧 London",
+                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+
+                        ui.div(ui.input_action_button("go_amsterdam",  "🇳🇱 Amsterdam",
+                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+
+                        ui.div(ui.input_action_button("go_paris",      "🇫🇷 Paris",
+                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+
+                        ui.div(ui.input_action_button("go_dublin",     "🇮🇪 Dublin",
+                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+
+                        ui.div(ui.input_action_button("reset_vue",     "🌍 Vue globale",
+                                                    class_="btn btn-outline-dark w-100"), class_="col"),
+                    ),
+
+                    ui.output_ui("map_flapd_sites", class_="mt-3"),
+
+                    # === Tableau synthétique ===
+                    ui.output_ui("encarts_villes", class_="mt-4"),
+                )
+            )
+        ),
         class_="pt-2"
     )
 
+    # --- Navset ---
     return ui.card(
         ui.div({"class": "card-title"},
                ui.tags.i({"class": "fa-solid fa-chart-area me-2"}),
@@ -136,6 +196,8 @@ def bloc_repartition():
         class_="thematique-card",
     )
 
+
+
 def bloc_bilan():
     """Bilan énergétique — France (carte + camembert) / AURA (placeholder)"""
 
@@ -143,7 +205,7 @@ def bloc_bilan():
     france= ui.div(
         dropcard("Résumé — Bilan énergétique", ui.p("À compléter…")),
         ui.div(
-            # Colonne GAUCHE : carte FR
+            # Colonne GAUCHE : carte FR 
             ui.div(
                 ui.div({"class": "panel"},
                        ui.div({"class": "panel-head"},
