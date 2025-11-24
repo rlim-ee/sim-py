@@ -69,124 +69,223 @@ def dropcard(title: str, *children, open: bool = False):
 def bloc_repartition():
     """Navset Répartition : Europe (map+barres+KPI) / FLAP-D"""
 
+    # === CSS Dark Mode FLAP-D ===
+    dark_css = ui.HTML("""
+    <style>
+
+    /* ===== Bouton Vue globale ===== */
+    .reset-btn {
+        border: 1px solid var(--bs-primary);
+        color: var(--bs-primary);
+    }
+    .dark .reset-btn {
+        border: 1px solid #ffffffcc;
+        color: #fff;
+    }
+
+    /* ===== Titre tableau synthèse ===== */
+    .titre-synthese {
+        font-weight: 700;
+        color: #0B162C;
+    }
+    .dark .titre-synthese {
+        color: #f5f5f7 !important;
+    }
+
+    </style>
+    """)
+
     # --- Europe ---
     europe_panel = ui.div(
+        dark_css,   
         dropcard("Résumé — Répartition", ui.p("À compléter…")),
         ui.div(
             ui.div(
-                ui.div({"class": "panel"},
-                       ui.div({"class": "panel-head"},
-                              ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
-                              ui.h4("Carte choroplèthe & cercles", class_="panel-title")),
-                       ui.div(ui.div(ui.output_ui("repartition_map"), class_="map-wrap"), class_="panel-body")),
-                class_="col"),
+                ui.div(
+                    {"class": "panel"},
+                    ui.div(
+                        {"class": "panel-head"},
+                        ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+                        ui.h4("Carte choroplèthe & cercles", class_="panel-title"),
+                    ),
+                    ui.div(
+                        ui.div(ui.output_ui("repartition_map"), class_="map-wrap"),
+                        class_="panel-body",
+                    ),
+                ),
+                class_="col",
+            ),
             ui.div(
-                ui.div({"class": "panel"},
-                       ui.div({"class": "panel-head"},
-                              ui.tags.i({"class": "fa-solid fa-chart-bar"}),
-                              ui.h4("Part du nombre des DC en Europe", class_="panel-title")),
-                       ui.div(sw.output_widget("dc_share_plot"), class_="panel-body"),
-                       ui.div("Répartition proportionnelle par pays.", class_="panel-foot")),
-                class_="col"),
+                ui.div(
+                    {"class": "panel"},
+                    ui.div(
+                        {"class": "panel-head"},
+                        ui.tags.i({"class": "fa-solid fa-chart-bar"}),
+                        ui.h4("Part du nombre des DC en Europe", class_="panel-title"),
+                    ),
+                    ui.div(sw.output_widget("dc_share_plot"), class_="panel-body"),
+                    ui.div("Répartition proportionnelle par pays.", class_="panel-foot"),
+                ),
+                class_="col",
+            ),
             class_="row gap-4 row-eq",
         ),
         ui.div(
             ui.div(
-                ui.div({"class": "kpi-card accent-bolt"},
-                       ui.div({"class": "kpi-icon"}, ui.tags.i({"class": "fa-solid fa-bolt"})),
-                       ui.div({"class": "kpi-title"}, "Data centers recensés"),
-                       ui.div({"class": "kpi-value"}, ui.output_text("kpi_total_dc")),
-                       ui.p("Nombre total de data centres recensés.", class_="mb-0")),
-                class_="col"),
+                ui.div(
+                    {"class": "kpi-card accent-bolt"},
+                    ui.div({"class": "kpi-icon"}, ui.tags.i({"class": "fa-solid fa-bolt"})),
+                    ui.div({"class": "kpi-title"}, "Data centers recensés"),
+                    ui.div({"class": "kpi-value"}, ui.output_text("kpi_total_dc")),
+                    ui.p("Nombre total de data centres recensés.", class_="mb-0"),
+                ),
+                class_="col",
+            ),
             class_="row gap-4 mt-3",
         ),
     )
 
-    # --- FLAP-D --- 
+    # --- FLAP-D ---
     flapd_panel = ui.div(
         dropcard(
             "Résumé — FLAP-D",
             ui.div(
+
+                # Intro générale
                 ui.p(
-            "Cette section présente la répartition des Data Centers dans les cinq grands "
-            "hubs européens que l’on regroupe sous l’acronyme FLAP-D : Francfort, Londres, "
-            "Amsterdam, Paris et Dublin. Ces zones concentrent la majorité des capacités "
-            "d’hébergement et de connectivité en Europe."
-        ),
-        ui.p(
-            "La carte interactive permet d’explorer la position géographique des Data Centers, "
-            "leur puissance électrique et leur surface estimée. Les bulles sont redimensionnées "
-            "automatiquement selon la surface, et colorées en fonction de leur capacité électrique."
-        ),
-        ui.p(
-            "Autour de chaque ville principale, un regroupement automatique est appliqué pour "
-            "inclure les communes limitrophes hébergeant des Data Centers (par exemple "
-            "Saint-Denis, Courbevoie ou Slough). Ce mécanisme permet de représenter "
-            "fidèlement chaque pôle géographique sans nécessiter une liste manuelle."
-        ),
-        ui.p(
-            "Le tableau de synthèse présente les indicateurs clés pour chaque hub : nombre total "
-            "de Data Centers, surfaces moyennes et totales, puissances moyenne et médiane ainsi "
-            "que le PUE moyen. Chaque indicateur est accompagné d’une pastille colorée indiquant "
-            "le niveau de complétude des données (bleu = très bon, orange = moyen, rouge = limité)."
-        ),
-        ui.p(
-            "Vous pouvez trier le tableau en cliquant sur les intitulés de colonnes pour comparer "
-            "visuellement les hubs selon différents critères."
-        ),
-        style="font-size: 15px; line-height: 1.55;"
+                    "Cette section présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens regroupés sous l’acronyme FLAP-D : Francfort, Londres, Amsterdam, Paris et Dublin. "
+                    "Ces pôles concentrent une part importante des capacités d’hébergement, de connectivité et d’infrastructures critiques en Europe."
+                ),
+
+                ui.tags.hr(),
+
+                # Partie carte
+                ui.p(ui.strong("🗺️ Carte interactive :")),
+                ui.p(
+                    "La carte permet d’explorer la localisation des Data Centers, leur capacité électrique et leur surface estimée. "
+                    "Les cercles sont redimensionnés selon la surface occupée et colorés en fonction de la puissance installée."
+                ),
+                ui.p(
+                    "Un regroupement automatique est appliqué autour de chaque hub afin d’intégrer les communes limitrophes (ex. Saint-Denis, Courbevoie ou Slough), "
+                    "garantissant une représentation fidèle de chaque zone géographique."
+                ),
+
+                ui.tags.hr(),
+
+                # Partie Tableau synthétique
+                ui.p(ui.strong("📊 Tableau de synthèse :")),
+                ui.p(
+                    "Le tableau récapitule les indicateurs clés pour chaque hub : nombre total de Data Centers, surfaces moyennes et totales, "
+                    "puissances moyenne et médiane, ainsi que le PUE moyen."
+                ),
+                ui.p(
+                    "Chaque indicateur est accompagné d’une pastille colorée permettant d’évaluer la complétude de l’information disponible :"
+                ),
+                ui.tags.ul(
+                    ui.tags.li("🔵 Bleu : données complètes (≥ 60 %)"),
+                    ui.tags.li("🟠 Orange : données partiellement complètes (30–60 %)"),
+                    ui.tags.li("🔴 Rouge : données limitées (< 30 %)"),
+                ),
+
+                ui.tags.hr(),
+
+                # Partie Instructions
+                ui.p(ui.strong("🔧 Interaction utilisateur :")),
+                ui.p(
+                    "Vous pouvez cliquer sur les boutons situés au-dessus de la carte pour focaliser l’affichage sur un hub spécifique, "
+                    "ou revenir à la vue globale. Les colonnes du tableau peuvent être triées afin de faciliter les comparaisons entre hubs."
+                ),
+
+                ui.tags.hr(),
+
+                # Partie méthodologique (facultative mais utile)
+                ui.p(ui.strong("ℹ️ Méthodologie :")),
+                ui.p(
+                    "Les données proviennent d’un traitement automatisé et d’une harmonisation des sources disponibles (DataCenterMap, avril 2025). "
+                    "Un algorithme de regroupement géographique permet de rattacher automatiquement chaque Data Center au hub le plus proche."
+                ),
+
+                style="font-size: 15px; line-height: 1.55;",
             ),
-            
         ),
 
         ui.div(
             {"class": "panel"},
-            ui.div({"class": "panel-head"},
+            ui.div(
+                {"class": "panel-head"},
                 ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
-                ui.h4("Carte des Data Centers FLAP-D", class_="panel-title")),
+                ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
+            ),
             ui.div(
                 {"class": "panel-body"},
                 ui.div(
-                    {"style": "background: #f9f9f9; padding: 16px; border-radius: 8px;"},
+                    {"style": "padding: 16px; border-radius: 8px;"},
 
-                    # === Boutons FLAP-D (ordonnés FLAPD) ===
+                    # === Boutons FLAP-D ===
                     ui.div(
                         {"class": "row gap-2 mb-3"},
 
-                        ui.div(ui.input_action_button("go_frankfurt",  "🇩🇪 Frankfurt am Main",
-                                                    class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(
+                            ui.input_action_button(
+                                "go_frankfurt", "🇩🇪 Frankfurt am Main",
+                                class_="btn btn-outline-primary w-100",
+                            ),
+                            class_="col",
+                        ),
+                        ui.div(
+                            ui.input_action_button(
+                                "go_london", "🇬🇧 London",
+                                class_="btn btn-outline-primary w-100",
+                            ),
+                            class_="col",
+                        ),
+                        ui.div(
+                            ui.input_action_button(
+                                "go_amsterdam", "🇳🇱 Amsterdam",
+                                class_="btn btn-outline-primary w-100",
+                            ),
+                            class_="col",
+                        ),
+                        ui.div(
+                            ui.input_action_button(
+                                "go_paris", "🇫🇷 Paris",
+                                class_="btn btn-outline-primary w-100",
+                            ),
+                            class_="col",
+                        ),
+                        ui.div(
+                            ui.input_action_button(
+                                "go_dublin", "🇮🇪 Dublin",
+                                class_="btn btn-outline-primary w-100",
+                            ),
+                            class_="col",
+                        ),
 
-                        ui.div(ui.input_action_button("go_london",     "🇬🇧 London",
-                                                    class_="btn btn-outline-primary w-100"), class_="col"),
-
-                        ui.div(ui.input_action_button("go_amsterdam",  "🇳🇱 Amsterdam",
-                                                    class_="btn btn-outline-primary w-100"), class_="col"),
-
-                        ui.div(ui.input_action_button("go_paris",      "🇫🇷 Paris",
-                                                    class_="btn btn-outline-primary w-100"), class_="col"),
-
-                        ui.div(ui.input_action_button("go_dublin",     "🇮🇪 Dublin",
-                                                    class_="btn btn-outline-primary w-100"), class_="col"),
-
-                        ui.div(ui.input_action_button("reset_vue",     "🌍 Vue globale",
-                                                    class_="btn btn-outline-dark w-100"), class_="col"),
+                        # === Bouton Vue globale (dark mode compatible) ===
+                        ui.div(
+                            ui.input_action_button(
+                                "reset_vue", "🌍 Vue globale",
+                                class_="btn reset-btn w-100",
+                            ),
+                            class_="col",
+                        ),
                     ),
 
                     ui.output_ui("map_flapd_sites", class_="mt-3"),
-
-                    # === Tableau synthétique ===
                     ui.output_ui("encarts_villes", class_="mt-4"),
-                )
-            )
+                ),
+            ),
         ),
-        class_="pt-2"
+        class_="pt-2",
     )
 
     # --- Navset ---
     return ui.card(
-        ui.div({"class": "card-title"},
-               ui.tags.i({"class": "fa-solid fa-chart-area me-2"}),
-               "Répartition des DC"),
+        ui.div(
+            {"class": "card-title"},
+            ui.tags.i({"class": "fa-solid fa-chart-area me-2"}),
+            "Répartition des DC",
+        ),
         ui.navset_tab(
             ui.nav_panel("Europe", europe_panel),
             ui.nav_panel("FLAP-D", flapd_panel),
@@ -195,6 +294,7 @@ def bloc_repartition():
         full_screen=True,
         class_="thematique-card",
     )
+
 
 
 
