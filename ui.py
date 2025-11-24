@@ -207,137 +207,111 @@ def bloc_repartition():
 
     # --- FLAP-D ---
     flapd_panel = ui.div(
-        dropcard(
-            "Résumé — FLAP-D",
-            ui.div(
 
-                # Intro générale
-                ui.p(
-                    "Cette section présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens regroupés sous l’acronyme FLAP-D : Francfort, Londres, Amsterdam, Paris et Dublin. "
-                    "Ces pôles concentrent une part importante des capacités d’hébergement, de connectivité et d’infrastructures critiques en Europe."
-                ),
+    # --- Titre + intro ---
+    ui.div(
+        {"class": "section-lead"},
+        ui.h2("FLAP-D"),
+        ui.p(
+            "Ce module présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens "
+            "regroupés sous l’acronyme FLAP-D : ",
+            ui.strong("Francfort, Londres, Amsterdam, Paris et Dublin."),
+            " Ces pôles concentrent une part importante des capacités d’hébergement et de connectivité en Europe."
+        ),
+    ),
 
-                ui.tags.hr(),
-
-                # Partie carte
-                ui.p(ui.strong("🗺️ Carte interactive :")),
-                ui.p(
-                    "La carte permet d’explorer la localisation des Data Centers, leur capacité électrique et leur surface estimée. "
-                    "Les cercles sont redimensionnés selon la surface occupée et colorés en fonction de la puissance installée."
-                ),
-                ui.p(
-                    "Un regroupement automatique est appliqué autour de chaque hub afin d’intégrer les communes limitrophes (ex. Saint-Denis, Courbevoie ou Slough), "
-                    "garantissant une représentation fidèle de chaque zone géographique."
-                ),
-
-                ui.tags.hr(),
-
-                # Partie Tableau synthétique
-                ui.p(ui.strong("📊 Tableau de synthèse :")),
-                ui.p(
-                    "Le tableau récapitule les indicateurs clés pour chaque hub : nombre total de Data Centers, surfaces moyennes et totales, "
-                    "puissances moyenne et médiane, ainsi que le PUE moyen."
-                ),
-                ui.p(
-                    "Chaque indicateur est accompagné d’une pastille colorée permettant d’évaluer la complétude de l’information disponible :"
-                ),
-                ui.tags.ul(
-                    ui.tags.li("🔵 Bleu : données complètes (≥ 60 %)"),
-                    ui.tags.li("🟠 Orange : données partiellement complètes (30–60 %)"),
-                    ui.tags.li("🔴 Rouge : données limitées (< 30 %)"),
-                ),
-
-                ui.tags.hr(),
-
-                # Partie Instructions
-                ui.p(ui.strong("🔧 Interaction utilisateur :")),
-                ui.p(
-                    "Vous pouvez cliquer sur les boutons situés au-dessus de la carte pour focaliser l’affichage sur un hub spécifique, "
-                    "ou revenir à la vue globale. Les colonnes du tableau peuvent être triées afin de faciliter les comparaisons entre hubs."
-                ),
-
-                ui.tags.hr(),
-
-                # Partie méthodologique (facultative mais utile)
-                ui.p(ui.strong("ℹ️ Méthodologie :")),
-                ui.p(
-                    "Les données proviennent d’un traitement automatisé et d’une harmonisation des sources disponibles (DataCenterMap, avril 2025). "
-                    "Un algorithme de regroupement géographique permet de rattacher automatiquement chaque Data Center au hub le plus proche."
-                ),
-
-                style="font-size: 15px; line-height: 1.55;",
+    # --- Dropcard (Savoir plus) ---
+    dropcard(
+        "Résumé — FLAP-D",
+        ui.div(
+            ui.p(
+                ui.strong("📍 Hubs étudiés : "),
+                "les data centers sont automatiquement rattachés au hub le plus proche via un algorithme géographique "
+                "tenant compte de la position exacte (latitude/longitude)."
             ),
+            ui.p(
+                ui.strong("⚡ Lectures croisées : "),
+                "la carte permet de visualiser les sites selon leur puissance installée et leur surface au sol, "
+                "tandis que le tableau synthétise les caractéristiques moyennes par hub."
+            ),
+            ui.p(
+                ui.strong("🔍 Méthodologie : "),
+                "les données proviennent d’une harmonisation de sources ouvertes (DataCenterMap – avril 2025). "
+                "Les valeurs manquantes sont mesurées via des indicateurs de complétude (pastilles colorées)."
+            ),
+            style="font-size: 15px; line-height: 1.55;",
+        ),
+    ),
+
+    # --- Carte FLAP-D ---
+    ui.div(
+        {"class": "panel"},
+        ui.div(
+            {"class": "panel-head"},
+            ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+            ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
         ),
 
         ui.div(
-            {"class": "panel"},
+            {"class": "panel-body"},
             ui.div(
-                {"class": "panel-head"},
-                ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
-                ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
-            ),
-            ui.div(
-                {"class": "panel-body"},
+                {"style": "padding: 16px; border-radius: 8px;"},
+
+                # Boutons FLAPD
                 ui.div(
-                    {"style": "padding: 16px; border-radius: 8px;"},
-
-                    # === Boutons FLAP-D ===
-                    ui.div(
-                        {"class": "row gap-2 mb-3"},
-
-                        ui.div(
-                            ui.input_action_button(
-                                "go_frankfurt", "🇩🇪 Frankfurt am Main",
-                                class_="btn btn-outline-primary w-100",
-                            ),
-                            class_="col",
-                        ),
-                        ui.div(
-                            ui.input_action_button(
-                                "go_london", "🇬🇧 London",
-                                class_="btn btn-outline-primary w-100",
-                            ),
-                            class_="col",
-                        ),
-                        ui.div(
-                            ui.input_action_button(
-                                "go_amsterdam", "🇳🇱 Amsterdam",
-                                class_="btn btn-outline-primary w-100",
-                            ),
-                            class_="col",
-                        ),
-                        ui.div(
-                            ui.input_action_button(
-                                "go_paris", "🇫🇷 Paris",
-                                class_="btn btn-outline-primary w-100",
-                            ),
-                            class_="col",
-                        ),
-                        ui.div(
-                            ui.input_action_button(
-                                "go_dublin", "🇮🇪 Dublin",
-                                class_="btn btn-outline-primary w-100",
-                            ),
-                            class_="col",
-                        ),
-
-                        # === Bouton Vue globale (dark mode compatible) ===
-                        ui.div(
-                            ui.input_action_button(
-                                "reset_vue", "🌍 Vue globale",
-                                class_="btn reset-btn w-100",
-                            ),
-                            class_="col",
-                        ),
-                    ),
-
-                    ui.output_ui("map_flapd_sites", class_="mt-3"),
-                    ui.output_ui("encarts_villes", class_="mt-4"),
+                    {"class": "row gap-2 mb-3"},
+                    ui.div(ui.input_action_button("go_frankfurt", "🇩🇪 Frankfurt am Main", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_london", "🇬🇧 London", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_amsterdam", "🇳🇱 Amsterdam", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_paris", "🇫🇷 Paris", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_dublin", "🇮🇪 Dublin", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("reset_vue", "🌍 Vue globale", class_="btn reset-btn w-100"), class_="col"),
                 ),
+
+                ui.output_ui("map_flapd_sites", class_="mt-3"),
             ),
         ),
-        class_="pt-2",
-    )
+
+        # --- Texte explicatif juste après la carte (comme Europe) ---
+        ui.div(
+            {"class": "panel-foot"},
+            ui.p(
+                ui.strong("🗺️ Lecture de la carte : "),
+                "les cercles représentent les data centers du hub sélectionné. Leur taille dépend de la surface (m²) "
+                "et leur couleur de la puissance électrique (MW). Les communes limitrophes sont automatiquement incluses "
+                "pour mieux représenter chaque pôle géographique."
+            ),
+        ),
+    ),
+
+    # --- Tableau FLAP-D ---
+    ui.div(
+        {"class": "panel mt-4"},
+        ui.div(
+            {"class": "panel-head"},
+            ui.tags.i({"class": "fa-solid fa-table"}),
+            ui.h4("Tableau synthétique – FLAP-D", class_="panel-title"),
+        ),
+
+        ui.div(
+            {"class": "panel-body"},
+            ui.output_ui("encarts_villes"),
+        ),
+
+        # --- Texte explicatif sous le tableau ---
+        ui.div(
+            {"class": "panel-foot"},
+            ui.p(
+                ui.strong("📊 Lecture du tableau : "),
+                "chaque hub présente des indicateurs moyens et totaux. Les pastilles colorées indiquent "
+                "la complétude de l’information pour chaque variable (surface, puissance, PUE)."
+            ),
+        ),
+    ),
+
+    class_="pt-2",
+)
+
 
     return ui.card(
         ui.div(
