@@ -352,6 +352,10 @@ html.dark .partners--dark { display: inline-block }
   margin-bottom: 0.5rem;
 }
 
+p {
+    text-align: justify;
+    text-justify: inter-word;
+}
 
 
 /* ===============================

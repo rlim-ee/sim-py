@@ -137,10 +137,25 @@ def bloc_repartition():
                     ui.div(
                         ui.p(
                             ui.strong("🗺️ Lecture de la carte : "),
-                            "les teintes de couleur représentent le ratio de data centers par million d’habitants, "
-                            "tandis que la taille des cercles indique le volume total d’infrastructures implantées. "
-                            "Les pays affichant des cercles importants et des teintes soutenues combinent à la fois un parc volumineux "
-                            "et une densité d’équipement élevée."),
+                            "Les teintes de couleur représentent le ratio de data centers par million d’habitants, "
+                            "tandis que la taille des cercles indique le volume total d’infrastructures implantées. "),
+                        ui.accordion(
+                            ui.accordion_panel(
+                                "Détails d’interprétation",
+                                ui.p(
+                                    "Les pays affichant des cercles importants et des teintes soutenues combinent à la fois un parc volumineux "
+                                    "et une densité d’équipement élevée. "
+                                    "On observe que les pays du Nord de l’Europe présentent les ratios de data centers par habitant les plus élevés. "
+                                    "Ce phénomène s’explique en partie par leur très faible densité de population : quelques implantations "
+                                    "supplémentaires suffisent à faire fortement augmenter le nombre de data centers rapporté au million d’habitants. ",
+                                    ui.br(),
+                                    "🇮🇪 L’Irlande constitue toutefois le cas le plus spectaculaire : c’est le pays qui concentre le plus grand "
+                                    "nombre de data centers par rapport à sa population, avec plus de ", ui.strong("20"),
+                                    " installations par million d’habitants, alors que la moyenne européenne se situe autour de ", ui.strong("6"),
+                                    " data centers par million d’habitants.",),
+                                ),
+                            open=False
+                            ),
                         class_="panel-foot",
                     ),
                 ),
@@ -158,11 +173,22 @@ def bloc_repartition():
                     ui.div(
                         ui.p(
                             ui.strong("📊 Interprétation du graphique associé : "),
-                            "le diagramme en barres classe les pays selon leur part dans le total européen de data centers. "
-                            "L’analyse révèle une forte concentration : quelques États membres, "
-                            "notamment l’Allemagne, les Pays-Bas, la France, le Royaume-Uni et l’Irlande, "
-                            "regroupent la majorité du parc. Cette configuration traduit l’existence de pôles structurants "
-                            "— souvent désignés sous l’acronyme ‘FLAP-D’ — qui concentrent les ressources en connectivité et en capacités de traitement."),
+                            "le diagramme en barres classe les pays selon leur part dans le total européen de data centers. "),
+                        ui.accordion(
+                            ui.accordion_panel(
+                                "Détails d’interprétation",
+                                ui.p(
+                                    "On observe que les quatre premiers pays en nombre de data centers sont l’Allemagne, le Royaume-Uni, "
+                                    "la France et les Pays-Bas. À ce noyau s’ajoute très souvent l’Irlande, en raison de sa situation "
+                                    "particulière avec un nombre de data centers très élevé rapporté à la population. "
+                                    "À eux cinq, ces pays concentrent ", ui.strong("plus de la moitié"),
+                                    " des data centers recensés en Europe, ce qui révèle une forte concentration des infrastructures. "
+                                    "Cette configuration correspond aux pôles structurants souvent désignés sous l’acronyme ", ui.strong("« FLAP-D »"),
+                                    " (Francfort, Londres, Amsterdam, Paris, Dublin), qui concentrent les ressources en connectivité "
+                                    "et en capacités de traitement.",),
+                                ),
+                            open=False,  
+                            ),
                         class_="panel-foot",
                     ),
                 ),
@@ -205,11 +231,109 @@ def bloc_repartition():
         ),
     )
 
-    # FLAP-D
+    # --- FLAP-D ---
     flapd_panel = ui.div(
-        dropcard("Résumé — FLAP-D", ui.p("À compléter…")),
-        ui.h4("FLAP-D"),
-        ui.p("Espace réservé pour les hubs Francfort, Londres, Amsterdam, Paris, Dublin (à venir)."),
+
+    # --- Titre + intro ---
+    ui.div(
+        {"class": "section-lead"},
+        ui.h2("FLAP-D"),
+        ui.p(
+            "Ce module présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens "
+            "regroupés sous l’acronyme FLAP-D : ",
+            ui.strong("Francfort, Londres, Amsterdam, Paris et Dublin."),
+            " Ces pôles concentrent une part importante des capacités d’hébergement et de connectivité en Europe."
+        ),
+    ),
+
+    # --- Dropcard (Savoir plus) ---
+    dropcard(
+        "Savoir plus",
+        ui.div(
+            ui.p(
+                ui.strong("📍 Hubs étudiés : "),
+                "les data centers sont automatiquement rattachés au hub le plus proche via un algorithme géographique "
+                "tenant compte de la position exacte (latitude/longitude)."
+            ),
+            ui.p(
+                ui.strong("⚡ Lectures croisées : "),
+                "la carte permet de visualiser les sites selon leur puissance installée et leur surface au sol, "
+                "tandis que le tableau synthétise les caractéristiques moyennes par hub."
+            ),
+            ui.p(
+                ui.strong("🔍 Méthodologie : "),
+                "les données proviennent d’une harmonisation de sources ouvertes (DataCenterMap – avril 2025). "
+                "Les valeurs manquantes sont mesurées via des indicateurs de complétude (pastilles colorées)."
+            ),
+            style="font-size: 15px; line-height: 1.55;",
+        ),
+    ),
+
+    # --- Carte FLAP-D ---
+    ui.div(
+        {"class": "panel"},
+        ui.div(
+            {"class": "panel-head"},
+            ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+            ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
+        ),
+
+        ui.div(
+            {"class": "panel-body"},
+            ui.div(
+                {"style": "padding: 16px; border-radius: 8px;"},
+
+                # Boutons FLAPD
+                ui.div(
+                    {"class": "row gap-2 mb-3"},
+                    ui.div(ui.input_action_button("go_frankfurt", "🇩🇪 Frankfurt am Main", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_london", "🇬🇧 London", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_amsterdam", "🇳🇱 Amsterdam", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_paris", "🇫🇷 Paris", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("go_dublin", "🇮🇪 Dublin", class_="btn btn-outline-primary w-100"), class_="col"),
+                    ui.div(ui.input_action_button("reset_vue", "🌍 Vue globale", class_="btn reset-btn w-100"), class_="col"),
+                ),
+
+                ui.output_ui("map_flapd_sites", class_="mt-3"),
+            ),
+        ),
+
+        # --- Texte explicatif juste après la carte (comme Europe) ---
+        ui.div(
+            {"class": "panel-foot"},
+            ui.p(
+                ui.strong("🗺️ Lecture de la carte : "),
+                "les cercles représentent les data centers du hub sélectionné. Leur taille dépend de la surface (m²) "
+                "et leur couleur de la puissance électrique (MW). Les communes limitrophes sont automatiquement incluses "
+                "pour mieux représenter chaque pôle géographique."
+            ),
+        ),
+    ),
+
+    # --- Tableau FLAP-D ---
+    ui.div(
+        {"class": "panel mt-4"},
+        ui.div(
+            {"class": "panel-head"},
+            ui.tags.i({"class": "fa-solid fa-table"}),
+            ui.h4("Tableau synthétique – FLAP-D", class_="panel-title"),
+        ),
+
+        ui.div(
+            {"class": "panel-body"},
+            ui.output_ui("encarts_villes"),
+        ),
+
+        # --- Texte explicatif sous le tableau ---
+        ui.div(
+            {"class": "panel-foot"},
+            ui.p(
+                ui.strong("📊 Lecture du tableau : "),
+                "chaque hub présente des indicateurs moyens et totaux. Les pastilles colorées indiquent "
+                "la complétude de l’information pour chaque variable (surface, puissance, PUE). Le tableau est", ui.strong(" triable"), " dans par ordre", ui.strong(" croissant/décroissant"), " en cliquant l'en-tête de la colonne"
+            ),
+        ),
+    ),
         class_="pt-2",
     )
 
@@ -247,12 +371,14 @@ def bloc_bilan():
             "Savoir plus",
             ui.div(
                 ui.p(
-                    ui.strong("📍 Le cas d’Auvergne–Rhône-Alpes (AURA) : "),
-                    "dans la série retenue, AURA apparaît comme l’une des régions les plus productrices de France. "
-                    "Ce résultat tient à la combinaison d’un parc ",
-                    ui.strong("hydroélectrique"),
-                    " ancien et important (vallées alpines, aménagements du Rhône) et de raccordements structurants au réseau national.",
-                ),
+                    "Pour plus d'informations sur la production et la consommation énergétique en France, veuillez consulter le site de ",
+                    ui.a(
+                        "RTE",
+                        href="https://www.rte-france.com/#",
+                        target="_blank",
+                        rel="noopener noreferrer",
+                        ),
+                    "." )
             ),
         ),
         ui.div(
@@ -577,10 +703,19 @@ ui.row(
                             3,
                             ui.input_select(
                                 "ech_mix_year",
-                                "Année (mix OWID)",
+                                ui.tags.span(
+                                    "Année (mix ",
+                                    ui.tags.a(
+                                        "OWID",
+                                        href="https://ourworldindata.org/energy-production-consumption",
+                                        target="_blank",
+                                        rel="noopener noreferrer",
+                                        ),
+                                    ")",
+                                    ),
                                 choices=[str(y) for y in range(2014, 2025)],
                                 selected="2024",
-                            ),
+                                ),
                         ),
                         # 2) filière de production (nouveau)
                         ui.column(
@@ -741,7 +876,11 @@ def bloc_simulateurs():
             ui.h2("Analyse prédictive"),
             ui.p(
                 "Cette simulation a pour objectif de comparer la consommation électrique projetée d'un ou plusieurs data centers (DC) avec la production totale d'énergie "
-                "en France selon le rapport de RTE, sur la période 2025–2035. Les projections de consommation sont établies à partir des estimations de puissance du data center "
+                "en France selon", ui.a(" rapport RTE",
+                                           href=("https://www.rte-france.com/donnees-publications/etudes-prospectives/"
+                                                 "futurs-energetique-2050#Lesresultatsdeletude"),
+                                           target="_blank",
+                                           rel="noopener noreferrer",), " sur la période 2025–2035. Les projections de consommation sont établies à partir des estimations de puissance du data center "
                 "actuellement en construction à Eybens."
             ),
             ui.p(
@@ -795,15 +934,23 @@ def bloc_simulateurs():
             sw.output_widget("energiePlot"),
             ui.div(
                         ui.p(
-                            ui.strong("Le graphique d'évolution de la production et consommation énergétique en France depuis 2000 et la projection jusqu'à 2035 : "),
-                        "Le graphique présente, d’une part,", ui.strong(" l’historique de la consommation et de la production d’électricité en France entre 2000 et 2025,"), 
-                        " marqué par des fluctuations plus ou moins importantes en lien avec de grands événements mondiaux (crise financière de 2008, pandémie "
-                        "de Covid-19 en 2020, crise énergétique et guerre en Ukraine à partir de 2022), et, d’autre part,", ui.strong(" une projection jusqu’en 2050 basée sur "
-                        "les scénarios du rapport RTE, représentés par des plages d’incertitude autour des courbes de référence."), " La simulation de la consommation "
-                        "énergétique des data centers se concentre sur la période comprise entre les deux lignes pointillées (2024–2035) et est détaillée dans le "
-                        "graphique situé en dessous.",),
+                            ui.strong(
+                                "Le graphique d'évolution de la production et consommation énergétique en France depuis 2000 et la projection jusqu'à 2035 : "),
+                            "Le graphique présente, d’une part,",
+                            ui.strong(" l’historique de la consommation et de la production d’électricité en France entre 2000 et 2025,"),
+                            " marqué par des fluctuations plus ou moins importantes en lien avec de grands événements mondiaux (crise financière de 2008, pandémie "
+                            "de Covid-19 en 2020, crise énergétique et guerre en Ukraine à partir de 2022), et, d’autre part,",
+                            ui.strong(" une projection jusqu’en 2050 basée sur les scénarios du ",
+                                      ui.a("rapport RTE",
+                                           href=("https://www.rte-france.com/donnees-publications/etudes-prospectives/"
+                                                 "futurs-energetique-2050#Lesresultatsdeletude"),
+                                           target="_blank",
+                                           rel="noopener noreferrer",),
+                                      ", représentés par des plages d’incertitude autour des courbes de référence."),
+                            " La simulation de la consommation énergétique des data centers se concentre sur la période comprise entre les deux lignes pointillées (2024–2035) "
+                            "et est détaillée dans le graphique situé en dessous.",),
                         class_="panel-foot",),
-        ),
+            ),
         ui.div(
             {"class": "card"},
             ui.h3("Production vs Consommation (2025–2035)", class_="section-title"),

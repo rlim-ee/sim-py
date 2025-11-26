@@ -236,7 +236,7 @@ def server(input, output, session, app_dir: Path):
         if df_share.empty:
             return px.bar(title="Aucune donnée")
 
-        TOP_N = 12
+        TOP_N = 10
         top = df_share.head(TOP_N)
         rest_pct = max(0.0, 100.0 - float(top["share"].sum()))
         chart_df = pd.concat(
@@ -251,11 +251,13 @@ def server(input, output, session, app_dir: Path):
             data_plot,
             x="share", y="country", orientation="h",
             text=data_plot["share"].map(lambda v: f"{v:.1f}%"),
+            color="share",
+            color_continuous_scale="Purples",
         )
         fig.update_traces(
             textposition="outside", cliponaxis=False,
             hovertemplate="(%{x:.1f}%, %{y})<extra></extra>",
-            marker=dict(color=th["bar"], line=dict(color=th["bar_outline"], width=1)),
+            marker_line=dict(color=th["bar_outline"], width=1),
         )
         xmax = float(data_plot["share"].max()) if len(data_plot) else 0.0
         fig.update_layout(
@@ -263,6 +265,7 @@ def server(input, output, session, app_dir: Path):
             autosize=True, showlegend=False, title_text="",
             paper_bgcolor=th["paper"], plot_bgcolor=th["plot"],
             font=dict(color=th["font"], family="Poppins, Arial, sans-serif", size=13),
+            coloraxis_showscale=False,
         )
         fig.update_xaxes(
             title_text="Part du nombre de DC", ticksuffix="%", range=[0, xmax * 1.15],
