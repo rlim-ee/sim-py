@@ -74,6 +74,237 @@ def dropcard(title: str, *children, open: bool = False):
     )
 
 
+def bloc_hq_flapd():
+
+    def head_title_only(icon_class: str, title_ui):
+        """panel-head simple (sans consigne)"""
+        return ui.div(
+            {"class": "panel-head"},
+            ui.tags.i({"class": icon_class}),
+            ui.div(title_ui, class_="panel-title"),
+        )
+
+    def help_accordion(title: str, content_ui):
+        return ui.accordion(
+            ui.accordion_panel(
+                title,
+                ui.div(
+                    content_ui,
+                    class_="text-muted",
+                    style="font-size:13px;line-height:1.45;",
+                ),
+            )
+        )
+
+    # Instruction 
+    instruction_map = ui.p(
+        "Cliquez sur un ",
+        ui.strong("hub"),
+        " pour afficher la vue détaillée. ",
+        "Re-cliquez sur le ",
+        ui.strong("hub actif"),
+        " pour revenir à la vue globale.",
+        style="margin:0 0 10px 0;",
+    )
+
+    return ui.card(
+        ui.div(
+            {"class": "card-title"},
+            ui.tags.i({"class": "fa-solid fa-globe me-2"}),
+            "FLAP-D — Pays d’origine (HQ)",
+        ),
+
+        ui.div(
+            {"class": "section-lead"},
+            ui.h2("Europe"),
+            ui.p(
+                "Ce module explore l’origine géographique des entreprises opérant les data centers "
+                "des cinq hubs FLAP-D : Francfort, Londres, Amsterdam, Paris et Dublin."
+            ),
+        ),
+
+        # LIGNE 1 : CARTE + TREEMAP
+        ui.div(
+            ui.div(
+                # CARTE 
+                ui.div(
+                    ui.div(
+                        {"class": "panel"},
+
+                        head_title_only(
+                            "fa-solid fa-layer-group",
+                            ui.output_text("titre_carte_hq"),
+                        ),
+
+                        ui.div(
+                            instruction_map,
+
+                            ui.div(
+                                {
+                                    "id": "map-responsive-wrapper",
+                                    "style": (
+                                        "width:100%;"
+                                        "height:0;"
+                                        "padding-bottom:65%;"
+                                        "position:relative;"
+                                        "overflow:hidden;"
+                                        "border-radius:8px;"
+                                    ),
+                                },
+                                ui.div(
+                                    {
+                                        "id": "map-inner",
+                                        "style": (
+                                            "position:absolute;"
+                                            "top:0;left:0;"
+                                            "width:100%;height:100%;"
+                                        ),
+                                    },
+                                    ui.output_ui("map_hq_flapd"),
+                                ),
+                            ),
+
+                            class_="panel-body",
+                        ),
+
+                        ui.div(
+                            ui.div(ui.output_ui("commentaire_carte_hq"), style="color:#111;"),
+
+                            ui.div(
+                                {"class": "mt-2"},
+                                help_accordion(
+                                    "Comment lire cette carte ?",
+                                    ui.div(
+                                        ui.p(
+                                            ui.strong("Coloration des pays : "),
+                                            "représente la part (%) des entreprises du hub.",
+                                            style="margin:0 0 6px 0;",
+                                        ),
+                                        ui.p(
+                                            ui.strong("Flèches : "),
+                                            "indiquent le sens des connexions (pays siège → hub).",
+                                            style="margin:0 0 6px 0;",
+                                        ),
+                                        ui.p(
+                                            ui.strong("Points gris : "),
+                                            "localisent les pays sièges (HQ).",
+                                            style="margin:0;",
+                                        ),
+                                    ),
+                                ),
+                            ),
+
+                            class_="panel-foot",
+                        ),
+                    ),
+                    class_="col",
+                ),
+
+                # TREEMAP
+                ui.div(
+                    ui.div(
+                        {"class": "panel"},
+
+                        head_title_only(
+                            "fa-solid fa-chart-area",
+                            ui.div("Répartition des entreprises gestionnaire"), #
+                        ),
+
+                        ui.div(
+                            ui.output_ui("treemap_hq"),
+                            class_="panel-body",
+                        ),
+
+                        ui.div(
+                            ui.div(ui.output_ui("commentaire_treemap_hq"), style="color:#111;"),
+
+                            ui.div(
+                                {"class": "mt-2"},
+                                help_accordion(
+                                    "Lecture du treemap",
+                                    ui.div(
+                                        ui.p(
+                                            ui.strong("Surface : "),
+                                            "plus le rectangle est grand, plus la part du pays est élevée.",
+                                            style="margin:0 0 6px 0;",
+                                        ),
+                                        ui.p(
+                                            ui.strong("Navigation : "),
+                                            "cliquer sur un rectangle permet de zoomer dans la contribution.",
+                                            style="margin:0;",
+                                        ),
+                                    ),
+                                ),
+                            ),
+
+                            class_="panel-foot",
+                        ),
+                    ),
+                    class_="col",
+                ),
+
+                class_="row gap-4 row-eq",
+            ),
+            class_="mt-3",
+        ),
+
+        ui.tags.hr(class_="section-sep"),
+
+
+        # LIGNE 2 : TOP 5
+
+        ui.div(
+            ui.div(
+                ui.div(
+                    {"class": "panel"},
+
+                    head_title_only(
+                        "fa-solid fa-ranking-star",
+                        ui.output_text("titre_top5"),
+                    ),
+
+                    ui.div(
+                        ui.output_data_frame("top5_table"),
+                        class_="panel-body",
+                    ),
+
+                    ui.div(
+                        ui.div(ui.output_ui("commentaire_top5_hq"), style="color:#111;"),
+
+                        ui.div(
+                            {"class": "mt-2"},
+                            help_accordion(
+                                "Que dire de ce Top 5 ?",
+                                ui.div(
+                                    ui.p(
+                                        ui.strong("Nombre de DC : "),
+                                        "mesure la présence opérationnelle dans le hub.",
+                                        style="margin:0 0 6px 0;",
+                                    ),
+                                    ui.p(
+                                        ui.strong("Score share_info : "),
+                                        "permet de comparer la transparence entre entreprises.",
+                                        style="margin:0;",
+                                    ),
+                                ),
+                            ),
+                        ),
+
+                        class_="panel-foot",
+                    ),
+                ),
+                class_="col-12",
+            ),
+            class_="row",
+        ),
+
+        full_screen=True,
+        class_="thematique-card",
+    )
+
+
+
+
 # ---------- Blocs UI réutilisables ----------
 def bloc_repartition():
     """Navset Répartition : Europe (map+barres+KPI) / FLAP-D (placeholder)"""
@@ -208,109 +439,178 @@ def bloc_repartition():
     # --- FLAP-D ---
     flapd_panel = ui.div(
 
-    # --- Titre + intro ---
-    ui.div(
-        {"class": "section-lead"},
-        ui.h2("FLAP-D"),
-        ui.p(
-            "Ce module présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens "
-            "regroupés sous l’acronyme FLAP-D : ",
-            ui.strong("Francfort, Londres, Amsterdam, Paris et Dublin."),
-            " Ces pôles concentrent une part importante des capacités d’hébergement et de connectivité en Europe."
-        ),
-    ),
-
-    # --- Dropcard (Savoir plus) ---
-    dropcard(
-        "Résumé — FLAP-D",
+        # --- Titre + intro ---
         ui.div(
+            {"class": "section-lead"},
+            ui.h2("FLAP-D"),
             ui.p(
-                ui.strong("📍 Hubs étudiés : "),
-                "les data centers sont automatiquement rattachés au hub le plus proche via un algorithme géographique "
-                "tenant compte de la position exacte (latitude/longitude)."
+                "Ce module présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens "
+                "regroupés sous l’acronyme FLAP-D : ",
+                ui.strong("Francfort, Londres, Amsterdam, Paris et Dublin."),
+                " Ces pôles concentrent une part importante des capacités d’hébergement et de connectivité en Europe."
             ),
-            ui.p(
-                ui.strong("⚡ Lectures croisées : "),
-                "la carte permet de visualiser les sites selon leur puissance installée et leur surface au sol, "
-                "tandis que le tableau synthétise les caractéristiques moyennes par hub."
-            ),
-            ui.p(
-                ui.strong("🔍 Méthodologie : "),
-                "les données proviennent d’une harmonisation de sources ouvertes (DataCenterMap – avril 2025). "
-                "Les valeurs manquantes sont mesurées via des indicateurs de complétude (pastilles colorées)."
-            ),
-            style="font-size: 15px; line-height: 1.55;",
-        ),
-    ),
-
-    # --- Carte FLAP-D ---
-    ui.div(
-        {"class": "panel"},
-        ui.div(
-            {"class": "panel-head"},
-            ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
-            ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
         ),
 
-        ui.div(
-            {"class": "panel-body"},
+        # --- Dropcard (Savoir plus) ---
+        dropcard(
+            "Résumé — FLAP-D",
             ui.div(
-                {"style": "padding: 16px; border-radius: 8px;"},
+                ui.p(
+                    ui.strong("📍 Hubs étudiés : "),
+                    "les data centers sont automatiquement rattachés au hub le plus proche via un algorithme géographique "
+                    "tenant compte de la position exacte (latitude/longitude)."
+                ),
+                ui.p(
+                    ui.strong("⚡ Lectures croisées : "),
+                    "la carte permet de visualiser les sites selon leur puissance installée et leur surface au sol, "
+                    "tandis que le tableau synthétise les caractéristiques moyennes par hub."
+                ),
+                ui.p(
+                    ui.strong("🔍 Méthodologie : "),
+                    "les données proviennent d’une harmonisation de sources ouvertes (DataCenterMap – avril 2025). "
+                    "Les valeurs manquantes sont mesurées via des indicateurs de complétude (pastilles colorées)."
+                ),
+                style="font-size: 15px; line-height: 1.55;",
+            ),
+        ),
 
-                # Boutons FLAPD
+        # --- Carte FLAP-D ---
+        ui.div(
+            {"class": "panel"},
+            ui.div(
+                {"class": "panel-head"},
+                ui.tags.i({"class": "fa-solid fa-map-location-dot"}),
+                ui.h4("Carte des Data Centers FLAP-D", class_="panel-title"),
+            ),
+
+            ui.div(
+                {"class": "panel-body"},
                 ui.div(
-                    {"class": "row gap-2 mb-3"},
-                    ui.div(ui.input_action_button("go_frankfurt", "🇩🇪 Frankfurt am Main", class_="btn btn-outline-primary w-100"), class_="col"),
-                    ui.div(ui.input_action_button("go_london", "🇬🇧 London", class_="btn btn-outline-primary w-100"), class_="col"),
-                    ui.div(ui.input_action_button("go_amsterdam", "🇳🇱 Amsterdam", class_="btn btn-outline-primary w-100"), class_="col"),
-                    ui.div(ui.input_action_button("go_paris", "🇫🇷 Paris", class_="btn btn-outline-primary w-100"), class_="col"),
-                    ui.div(ui.input_action_button("go_dublin", "🇮🇪 Dublin", class_="btn btn-outline-primary w-100"), class_="col"),
-                    ui.div(ui.input_action_button("reset_vue", "🌍 Vue globale", class_="btn reset-btn w-100"), class_="col"),
+                    {"style": "padding: 16px; border-radius: 8px;"},
+
+                    # Boutons FLAPD
+                    ui.div(
+                        {"class": "row gap-2 mb-3"},
+                        ui.div(ui.input_action_button("go_frankfurt", "🇩🇪 Frankfurt am Main", class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(ui.input_action_button("go_london", "🇬🇧 London", class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(ui.input_action_button("go_amsterdam", "🇳🇱 Amsterdam", class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(ui.input_action_button("go_paris", "🇫🇷 Paris", class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(ui.input_action_button("go_dublin", "🇮🇪 Dublin", class_="btn btn-outline-primary w-100"), class_="col"),
+                        ui.div(ui.input_action_button("reset_vue", "🌍 Vue globale", class_="btn reset-btn w-100"), class_="col"),
+                    ),
+
+                    ui.output_ui("map_flapd_sites", class_="mt-3"),
+                ),
+            ),
+
+            # --- Texte explicatif juste après la carte ---
+            ui.div(
+                {"class": "panel-foot"},
+
+                ui.p(
+                    ui.strong("🗺️ Lecture de la carte : "),
+                    "les cercles représentent les data centers du hub sélectionné. Leur taille dépend de la surface (m²) "
+                    "et leur couleur de la puissance électrique (MW). Les communes limitrophes sont automatiquement incluses "
+                    "pour mieux représenter chaque pôle géographique."
                 ),
 
-                ui.output_ui("map_flapd_sites", class_="mt-3"),
+                dropcard(
+                    "Interprétation — Carte FLAP-D",
+                    ui.div(
+                        ui.p(
+                            "Chaque hub FLAP-D présente une organisation spatiale distincte, combinant cœur urbain et périphéries spécialisées :"
+                        ),
+                        ui.tags.ul(
+                            ui.tags.li(
+                                "🇳🇱 ", ui.strong("Amsterdam : "),
+                                "hub compact et dense, centré sur le Science Park. Forte concentration de sites de taille "
+                                "moyenne, complétés par quelques grands campus vers Schiphol."
+                            ),
+                            ui.tags.li(
+                                "🇮🇪 ", ui.strong("Dublin : "),
+                                "pôle structuré autour des parcs d’activités à l’ouest de la ville. Capacités homogènes, "
+                                "moins dispersées spatialement que dans les autres hubs."
+                            ),
+                            ui.tags.li(
+                                "🇩🇪 ", ui.strong("Francfort : "),
+                                "l’un des hubs les plus denses et puissants. Mélange de grands sites et d’extensions "
+                                "périphériques (Offenbach, Wiesbaden). Forte intensité électrique."
+                            ),
+                            ui.tags.li(
+                                "🇬🇧 ", ui.strong("Londres : "),
+                                "hub le plus diversifié et le plus étendu. Importante dispersion géographique, des "
+                                "sites anciens du centre aux grands pôles spécialisés comme Slough."
+                            ),
+                            ui.tags.li(
+                                "🇫🇷 ", ui.strong("Paris : "),
+                                "forte périphérisation au nord et à l’ouest (Saint-Denis, Aubervilliers). Répartition "
+                                "entre nombreux sites intermédiaires et quelques très grands campus."
+                            ),
+                        ),
+                        style="font-size: 15px; line-height: 1.55;",
+                    ),
+                ),
             ),
         ),
 
-        # --- Texte explicatif juste après la carte (comme Europe) ---
+        # --- Tableau FLAP-D ---
         ui.div(
-            {"class": "panel-foot"},
-            ui.p(
-                ui.strong("🗺️ Lecture de la carte : "),
-                "les cercles représentent les data centers du hub sélectionné. Leur taille dépend de la surface (m²) "
-                "et leur couleur de la puissance électrique (MW). Les communes limitrophes sont automatiquement incluses "
-                "pour mieux représenter chaque pôle géographique."
+            {"class": "panel mt-4"},
+            ui.div(
+                {"class": "panel-head"},
+                ui.tags.i({"class": "fa-solid fa-table"}),
+                ui.h4("Tableau synthétique – FLAP-D", class_="panel-title"),
+            ),
+
+            ui.div(
+                {"class": "panel-body"},
+                ui.output_ui("encarts_villes"),
+            ),
+
+            ui.div(
+                {"class": "panel-foot"},
+
+                ui.p(
+                    ui.strong("📊 Lecture du tableau : "),
+                    "chaque hub présente des indicateurs moyens et totaux. Les pastilles colorées indiquent "
+                    "la complétude de l’information pour chaque variable (surface, puissance, PUE)."
+                ),
+
+                dropcard(
+                    "Interprétation — Tableau FLAP-D",
+                    ui.div(
+                        ui.p(
+                            "Le tableau met en évidence les différences de capacité, de surface et de complétude entre les hubs :"),
+                        ui.tags.ul(
+                            ui.tags.li(
+                                "🇳🇱 ", ui.strong("Amsterdam : "),
+                                "surfaces et puissances moyennes modérées ; tissu homogène de sites intermédiaires."),
+                            ui.tags.li(
+                                "🇮🇪 ", ui.strong("Dublin : "),
+                                "capacités élevées malgré un nombre plus restreint de sites ; données souvent incomplètes."),
+                            ui.tags.li(
+                                "🇩🇪 ", ui.strong("Francfort : "),
+                                "parmi les puissances moyennes les plus hautes ; forte présence de grands sites."),
+                            ui.tags.li(
+                                "🇬🇧 ", ui.strong("Londres : "),
+                                "forte dispersion des capacités ; cohabitation de très grands campus et de sites plus anciens."),
+                            ui.tags.li(
+                                "🇫🇷 ", ui.strong("Paris : "),
+                                "surfaces moyennes élevées tirées par quelques méga-sites ; nombreux sites intermédiaires."),
+                            ui.tags.li(
+                                "📉 ", ui.strong("Qualité des données : "),
+                                "PUE, année et tier souvent manquants, surtout à Dublin et Francfort : "
+                                "à lire comme des ordres de grandeur."),
+                        ),
+                        style="font-size: 15px; line-height: 1.55;",
+                    ),
+                ),
             ),
         ),
-    ),
 
-    # --- Tableau FLAP-D ---
-    ui.div(
-        {"class": "panel mt-4"},
-        ui.div(
-            {"class": "panel-head"},
-            ui.tags.i({"class": "fa-solid fa-table"}),
-            ui.h4("Tableau synthétique – FLAP-D", class_="panel-title"),
-        ),
+        class_="pt-2",
+    )
 
-        ui.div(
-            {"class": "panel-body"},
-            ui.output_ui("encarts_villes"),
-        ),
-
-        # --- Texte explicatif sous le tableau ---
-        ui.div(
-            {"class": "panel-foot"},
-            ui.p(
-                ui.strong("📊 Lecture du tableau : "),
-                "chaque hub présente des indicateurs moyens et totaux. Les pastilles colorées indiquent "
-                "la complétude de l’information pour chaque variable (surface, puissance, PUE)."
-            ),
-        ),
-    ),
-
-    class_="pt-2",
-)
 
 
     return ui.card(
@@ -1411,36 +1711,32 @@ button[disabled] { opacity: .45 !important; cursor: not-allowed !important; }
         ui.input_switch("darkmode", "Mode sombre", value=False),
         class_="topbar",
     ),
-    ui.tags.script(
-        """
-(function () {
-  function resizeAll() {
-    const plots = document.querySelectorAll('.js-plotly-plot');
-    plots.forEach(p => { try { Plotly.Plots.resize(p); } catch(e){} });
-  }
+    
+    ui.tags.script("""
+    (function () {
+    function hook() {
+        // Shiny peut ne pas être prêt immédiatement
+        if (!window.Shiny || !window.Shiny.setInputValue) {
+        setTimeout(hook, 100);
+        return;
+        }
+        window.addEventListener("message", function (event) {
+        if (!event || !event.data) return;
+        if (event.data.type === "hub_click" && event.data.hub) {
+            window.Shiny.setInputValue("hub_click", event.data.hub, { priority: "event" });
+        }
+        }, false);
+    }
+    hook();
+    })();
+    """),
 
-  // À chaque valeur Shiny livrée, redimensionner juste après le paint
-  document.addEventListener('shiny:value', () => {
-    requestAnimationFrame(resizeAll);
-  });
-
-  // Quand on change d’onglet (Bootstrap navset), redimensionner
-  document.addEventListener('shown.bs.tab', () => {
-    setTimeout(resizeAll, 60);
-  });
-
-  // Et sur resize fenêtre
-  window.addEventListener('resize', () => {
-    requestAnimationFrame(resizeAll);
-  });
-})();
-"""
-    ),
     # Présentation générale en haut de page (plein large)
     dropcard(
         "Présentation générale",
         ui.p("Présentation globale du dashboard, contexte et mode d’emploi. (À compléter…)"),
     ),
+    bloc_hq_flapd(),
     bloc_repartition(),
     bloc_bilan(),
     bloc_simulateurs(),

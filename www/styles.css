@@ -352,6 +352,17 @@ html.dark .partners--dark { display: inline-block }
   margin-bottom: 0.5rem;
 }
 
+/* Style des boutons actif FLAPD et Gestionnaire */
+.btn-hub { 
+    transition: 0.2s;
+}
+
+.btn-hub-active {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-color: #0d6efd !important;
+}
+
 
 
 /* ===============================
