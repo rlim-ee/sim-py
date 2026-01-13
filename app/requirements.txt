@@ -1,0 +1,10 @@
+shiny
+shinywidgets
+pandas
+geopandas
+plotly
+folium
+pyproj
+shapely
+fiona
+matplotlib
