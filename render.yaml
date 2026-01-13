@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: verit-shiny
-    env: docker
-    plan: starter          # au moins 1 Go de RAM conseillé pour GDAL/GeoPandas
-    autoDeploy: true
-    region: frankfurt      # ou autre région proche
-    healthCheckPath: /
