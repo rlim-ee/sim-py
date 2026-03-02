@@ -849,9 +849,9 @@ def bloc_simulateurs():
 
                 ui.p(
                     ui.tags.small(
-                        "Déplacez les curseurs pour effectuer une estimation "
-                        "de la consommation d'énergie en fonction du nombre "
-                        "de data centers et de leur facteur de charge."
+                        "Déplacez les curseurs pour effectuer une estimation de la consommation d'énergie "
+                        "en fonction du nombre de ", ui.strong("data centers"), ", de leur ", ui.strong("facteur de charge"),
+                        " et de leur ", ui.strong("puissance"), "."
                     )
                 ),
 
@@ -871,6 +871,15 @@ def bloc_simulateurs():
                     max=100,
                     value=100,
                     step=1,
+                ),
+                ui.input_slider(
+                    "puissance_mw",
+                    "Puissance par DC (MW)",
+                    min=0,
+                    max=1000,
+                    value=200,
+                    step=10,
+                    sep="",
                 ),
             ),
         ),
@@ -955,35 +964,9 @@ def bloc_simulateurs():
                 ),
             ),
 
-            # --- Projection DC ---
-            ui.div(
-                {"class": "card"},
-                ui.h3("Production vs Consommation (2025–2035)", class_="section-title"),
-                sw.output_widget("energy_plot"),
-                ui.div(
-                    ui.strong("Conso actuelle + conso DC en 2035 : "),
-                    ui.output_text("info_conso_totale"),
-                    class_="mt-2",
-                ),
-                ui.div(
-                    ui.tags.ul(
-                        ui.tags.li(
-                            "Points rouges : consommation totale incluant les DC"
-                        ),
-                        ui.tags.li(
-                            "Courbe verte : production électrique nationale"
-                        ),
-                        ui.tags.li(
-                            "Courbe bleue : consommation nationale de référence"
-                        ),
-                    ),
-                    class_="panel-foot",
-                ),
-            ),
-
             # =====================================================
-# KPI — Équivalents de production pour 2035
-# =====================================================
+            # KPI — Équivalents de production pour 2035
+            # =====================================================
 ui.div(
     {"class": "card"},
     ui.h3(

@@ -1,6 +1,7 @@
 # server/simulateurs.py
 from __future__ import annotations
 
+import pandas as pd
 from shiny import reactive, render, ui
 import shinywidgets as sw
 import plotly.graph_objects as go
@@ -17,47 +18,17 @@ COLORS = {
 # ============================
 # Données
 # ============================
-consommation_actuelle = 442.0 
 
-# Paliers DC (TWh / DC / an)
-DC_YEARS  = [2025, 2026, 2028, 2035]
-DC_TWH_DC = [0.131400, 1.752000, 3.504000, 8.760000]
+def load_data(app_dir: Path):
+    data_dir = app_dir / "www" / "data"
 
-# Production 2025–2035
-PROD_Y   = [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035]
-PROD_MIN = [538,  550,  560,  565,  568,  570,  572,  575,  578,  580,  585]
-PROD_MAX = [538,  570,  580,  590,  595,  600,  610,  615,  620,  628,  636]
-PROD_REF = [538,  560,  570,  577.5,581.5,585,  591,  595,  599,  604,  610.5]
+    dc_df = pd.read_csv(data_dir / "dc_paliers.csv")
+    conso_hist_df = pd.read_csv(data_dir / "conso_hist.csv")
+    prod_hist_df = pd.read_csv(data_dir / "prod_hist.csv")
+    conso_proj_df = pd.read_csv(data_dir / "conso_proj.csv")
+    prod_proj_df = pd.read_csv(data_dir / "prod_proj.csv")
 
-# Consommation 2025–2035 (réf.)
-CONSO_Y   = [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035]
-CONSO_REF = [442,  455,  468,  481,  494,  508,  514,  520,  526,  532,  538]
-
-# Historique 2000–2024
-CONSO_HIST_Y = list(range(2000, 2025))
-CONSO_HIST_V = [425,434,434,449,460,464,468,467,481,472,499,472,487,495,463,474,482,481,477,472,449,472,454,439,442]
-
-PROD_HIST_Y = list(range(2000, 2025))
-PROD_HIST_V = [517,522,533,539,546,547,546,541,545,515,550,543,542,550,538,545,531,528,548,536,500,522,446,495,539]
-
-# Projections longues (2000–2050 chart)
-CONSO_PROJ_Y = list(range(2025, 2051))
-CONSO_PROJ_REF = [442,455,468,481,494,508,514,520,526,532,538,544,550,556,562,568,574,580,586,592,598,604,610,616,622,628]
-# bande min/max ±(0..50)
-def linspace(start: float, stop: float, n: int) -> list[float]:
-    if n <= 1:
-        return [start]
-    step = (stop - start) / (n - 1)
-    return [start + i * step for i in range(n)]
-
-_delta = linspace(0.0, 50.0, len(CONSO_PROJ_Y))
-CONSO_PROJ_MIN = [round(r - d, 1) for r, d in zip(CONSO_PROJ_REF, _delta)]
-CONSO_PROJ_MAX = [round(r + d, 1) for r, d in zip(CONSO_PROJ_REF, _delta)]
-
-PROD_PROJ_Y   = list(range(2025, 2051))
-PROD_PROJ_MIN = [538,550,560,565,568,570,572,575,578,580,585,590,595,600,610,620,630,640,650,660,665,670,675,680,685,690]
-PROD_PROJ_MAX = [538,570,580,590,595,600,610,615,620,628,636,645,655,665,675,685,695,705,715,725,735,740,745,750,755,760]
-PROD_PROJ_REF = [538,560,570,577.5,581.5,585,591,595,599,604,610.5,617.5,625,632.5,642.5,652.5,662.5,672.5,682.5,692.5,700,705,710,715,720,725]
+    return dc_df, conso_hist_df, prod_hist_df, conso_proj_df, prod_proj_df
 
 # ============================
 # Helpers affichage
@@ -140,11 +111,22 @@ capacities_twh_per_unit = {
     "nuke": 8.2, "hydro": 1.5, "wind": 0.004, "solar": 0.00004, "coal": 3.0, "bio": 0.1
 }
 
-def _equivalent_units(source: str, nb_dc: int, facteur_pct: float) -> int:
-    fc = max(0.0, min(1.0, (facteur_pct or 0)/100.0))
-    twh_2035 = DC_TWH_DC[-1] * max(1, nb_dc) * fc
+def _equivalent_units(
+    source: str,
+    nb_dc: int,
+    facteur_pct: float,
+    puissance_mw: float
+) -> int:
+
+    fc = max(0.0, min(1.0, (facteur_pct or 0) / 100.0))
+
+    # Calcul TWh basé sur la vraie formule
+    twh_2035 = (puissance_mw * 8760 * fc / 1e6) * max(1, nb_dc)
+
     unit_twh = capacities_twh_per_unit[source]
+
     return int(round(twh_2035 / unit_twh)) if unit_twh > 0 else 0
+
 
 # ============================
 # Simulation 2 : Habitants équivalents
@@ -172,6 +154,36 @@ PALETTE = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#8
 # ============================
 def server(input, output, session, app_dir: Path):
 
+    # ============================
+    # Chargement des données
+    # ============================
+
+    dc_df, conso_hist_df, prod_hist_df, conso_proj_df, prod_proj_df = load_data(app_dir)
+
+    # Historique
+    CONSO_HIST_Y = conso_hist_df["year"].tolist()
+    CONSO_HIST_V = conso_hist_df["value"].tolist()
+
+    PROD_HIST_Y = prod_hist_df["year"].tolist()
+    PROD_HIST_V = prod_hist_df["value"].tolist()
+
+    # Projections
+    CONSO_PROJ_Y = conso_proj_df["year"].tolist()
+    CONSO_PROJ_REF = conso_proj_df["ref"].tolist()
+    CONSO_PROJ_MIN = conso_proj_df["min"].tolist()
+    CONSO_PROJ_MAX = conso_proj_df["max"].tolist()
+
+    PROD_PROJ_Y = prod_proj_df["year"].tolist()
+    PROD_PROJ_REF = prod_proj_df["ref"].tolist()
+    PROD_PROJ_MIN = prod_proj_df["min"].tolist()
+    PROD_PROJ_MAX = prod_proj_df["max"].tolist()
+
+    DC_YEARS = dc_df["year"].tolist()
+    DC_TWH_DC = dc_df["twh_per_dc"].tolist()
+
+    consommation_actuelle = CONSO_HIST_V[-1]
+
+
     # ---------- TENDANCES 2000–2050 ----------
     @reactive.calc
     def _tendances():
@@ -180,151 +192,186 @@ def server(input, output, session, app_dir: Path):
     @output
     @sw.render_widget
     def energiePlot():
-        key = ("energiePlot", _is_dark(input))
-        if not hasattr(energiePlot, "_cache"):
-            energiePlot._cache = {}
-        cache = energiePlot._cache
-        if key in cache:
-            return cache[key]
 
-        d = _tendances()
+        nb_dc = int(input.nb_dc())
+        facteur = float(input.facteur_charge()) / 100
+        puissance_mw = float(input.puissance_mw())
+
+        # Impact DC en TWh
+        twh_dc = (puissance_mw * 8760 * facteur / 1e6) * nb_dc
+
         fig = go.Figure()
 
-        # Ruban consommation
-        x = d["ribbon_conso_x"]; ymin = d["ribbon_conso_min"]; ymax = d["ribbon_conso_max"]
+        # =====================================================
+        # BANDES MIN / MAX
+        # =====================================================
+
+        # Bande consommation
         fig.add_trace(go.Scatter(
-            x=x + list(reversed(x)),
-            y=ymax + list(reversed(ymin)),
-            fill="toself", mode="none", fillcolor="rgba(31,111,235,0.14)",
-            hoverinfo="skip", name="Estimation Consommation"
+            x=CONSO_PROJ_Y + list(reversed(CONSO_PROJ_Y)),
+            y=CONSO_PROJ_MAX + list(reversed(CONSO_PROJ_MIN)),
+            fill="toself",
+            mode="none",
+            fillcolor="rgba(31,111,235,0.14)",
+            name="Estimation min/max de consommation",
+           hoverinfo="skip"
         ))
-        # Ruban production
-        x = d["ribbon_prod_x"]; ymin = d["ribbon_prod_min"]; ymax = d["ribbon_prod_max"]
+
+        # Bande production
         fig.add_trace(go.Scatter(
-            x=x + list(reversed(x)),
-            y=ymax + list(reversed(ymin)),
-            fill="toself", mode="none", fillcolor="rgba(46,160,67,0.16)",
-            hoverinfo="skip", name="Estimation Production"
+            x=PROD_PROJ_Y + list(reversed(PROD_PROJ_Y)),
+            y=PROD_PROJ_MAX + list(reversed(PROD_PROJ_MIN)),
+            fill="toself",
+            mode="none",
+            fillcolor="rgba(46,160,67,0.16)",
+            name="Estimation min/max de production",
+            hoverinfo="skip"
         ))
-        # Lignes
+
+        # =====================================================
+        # LIGNES RÉFÉRENCE
+        # =====================================================
+
+        # Consommation référence
         fig.add_trace(go.Scatter(
-            x=d["lines_conso_x"], y=d["lines_conso_y"],
-            mode="lines", name="Consommation de référence",
-            line=dict(color=_consumption_color(input), width=2.8)))
+            x=CONSO_HIST_Y + CONSO_PROJ_Y,
+            y=CONSO_HIST_V + CONSO_PROJ_REF,
+            mode="lines",
+            line=dict(width=3, color="#1F6FEB"),
+            name="Consommation nationale (référence)"
+        ))
+
+         # Production référence
         fig.add_trace(go.Scatter(
-            x=d["lines_prod_x"], y=d["lines_prod_y"],
-            mode="lines", name="Production de référence",
-            line=dict(color=COLORS["production"], width=2.8)))
-
-        fig.add_vline(x=2025, line_dash="dash", line_color="rgba(148,163,184,.6)")
-        fig.add_vline(x=2035, line_dash="dash", line_color="rgba(148,163,184,.6)")
-        fig.update_layout(legend_title_text="", xaxis_title="Année", yaxis_title="TWh")
-
-        cache[key] = _style_fig(fig, input, height=420)
-        return cache[key]
-
-    # ---------- 2025–2035 (réf + conso simulée) ----------
-    @output
-    @sw.render_widget
-    def energy_plot():
-        nb_dc = int(input.nb_dc())
-        fc    = float(input.facteur_charge())
-
-        key = ("energy_plot", nb_dc, fc, _is_dark(input))
-        if not hasattr(energy_plot, "_cache"):
-            energy_plot._cache = {}
-        cache = energy_plot._cache
-        if key in cache:
-            return cache[key]
-
-        # sous-bande conso (2025–2035)
-        conso_sub_min = CONSO_PROJ_MIN[:11]
-        conso_sub_max = CONSO_PROJ_MAX[:11]
-
-        p = go.Figure()
-        # Bandes production
-        p.add_trace(go.Scatter(
-            x=PROD_Y + list(reversed(PROD_Y)),
-            y=PROD_MAX + list(reversed(PROD_MIN)),
-            fill="toself", mode="none", fillcolor="rgba(46,160,67,0.16)",
-            line=dict(color="rgba(0,0,0,0)"), name="Estimation de production", hoverinfo="skip"
-        ))
-        # Production courbes
-        p.add_trace(go.Scatter(x=PROD_Y, y=PROD_REF, mode="lines",
-                               line=dict(color=COLORS["production"], width=4),
-                               name="Projection de production de référence"))
-        p.add_trace(go.Scatter(x=PROD_Y, y=PROD_MIN, mode="lines",
-                               line=dict(color=COLORS["production"], width=2, dash="dash"),
-                               name="Projection de production minimum de référence"))
-        p.add_trace(go.Scatter(x=PROD_Y, y=PROD_MAX, mode="lines",
-                               line=dict(color=COLORS["production"], width=2, dash="dash"),
-                               name="Projection de production maximum de référence"))
-
-        # Consommation + bande
-        p.add_trace(go.Scatter(x=CONSO_Y, y=CONSO_REF, mode="lines",
-                               line=dict(color=_consumption_color(input), width=4),
-                               name="Projection de consommation de référence"))
-        p.add_trace(go.Scatter(
-            x=CONSO_Y + list(reversed(CONSO_Y)),
-            y=conso_sub_max + list(reversed(conso_sub_min)),
-            fill="toself", mode="none", fillcolor="rgba(31,111,235,0.14)",
-            line=dict(color="rgba(0,0,0,0)"), name="Estimation de consommation", hoverinfo="skip"
+            x=PROD_HIST_Y + PROD_PROJ_Y,
+            y=PROD_HIST_V + PROD_PROJ_REF,
+            mode="lines",
+            line=dict(width=3, color="#2EA043"),
+            name="Production nationale (référence)"
         ))
 
-        # Points conso simulée 
-        sim_x, sim_y = _consommation_totale_points(nb_dc, fc)
-        p.add_trace(go.Scatter(
-            x=sim_x, y=sim_y, mode="markers+text",
-            text=[str(y) for y in sim_x], textposition="top center",
-            marker=dict(color=COLORS["accent"], size=13, symbol="diamond-open",
-                        line=dict(color="#ffffff", width=2)),
-            name=f"Consommation simulée : Conso 2024 + conso de {nb_dc} DC",
-            hovertemplate="<b>Consommation simulée</b><br>Année: %{x}<br>%{y:.1f} TWh/an<extra></extra>",
+        # =====================================================
+        # CONSOMMATION SIMULÉE (à partir de 2024)
+        # =====================================================
+
+        simulated_x = CONSO_PROJ_Y
+        simulated_y = []
+
+        for year, ref in zip(CONSO_PROJ_Y, CONSO_PROJ_REF):
+            if year < 2025:
+                simulated_y.append(None)
+            elif year == 2025:
+                # point d'attache
+                simulated_y.append(ref)
+            else:
+                # ajout DC à partir de 2026
+                simulated_y.append(ref + twh_dc)
+
+    
+        fig.add_trace(go.Scatter(
+            x=simulated_x,
+            y=simulated_y,
+            mode="lines",
+            line=dict(
+                width=3,
+                dash="dash",
+                color="#F97316"
+            ),
+            name="Consommation avec Data Centers"
         ))
 
-        p.add_annotation(x=PROD_Y[-1],  y=PROD_REF[-1] + 3,
-                         text="<b>Production de référence</b>", showarrow=False,
-                         font=dict(color=COLORS["production"], size=13))
-        p.add_annotation(x=CONSO_Y[-1], y=CONSO_REF[-1] + 3,
-                         text="<b>Consommation de référence</b>", showarrow=False,
-                         font=dict(color=_consumption_color(input), size=13))
-
-        p.update_layout(xaxis_title="Année", yaxis_title="TWh/an")
-        cache[key] = _style_fig(p, input)
-        return cache[key]
+        fig.update_layout(
+            xaxis_title="Année",
+            yaxis_title="TWh",
+            height=460,
+            legend=dict(
+                orientation="h",         
+                y=-0.2,                  
+                x=0.5,                    
+                xanchor="center",
+                yanchor="top"
+            )
+        )
+        return _style_fig(fig, input, height=460)
 
     @output
     @render.text
     def info_conso_totale():
-        nb = int(input.nb_dc()); fc = float(input.facteur_charge())
-        twh_2035 = DC_TWH_DC[-1] * nb * max(0.0, min(1.0, fc/100.0))
-        total = consommation_actuelle + twh_2035
+        nb_dc = int(input.nb_dc())
+        facteur = float(input.facteur_charge()) / 100
+        puissance_mw = float(input.puissance_mw())
+
+        twh_dc = (puissance_mw * 8760 * facteur / 1e6) * nb_dc
+        total = consommation_actuelle + twh_dc
         return f"{total:.0f} TWh"
+
 
     # ---------- KPI équivalents (2035) ----------
     @output
     @render.text
-    def nuke_value():  return f"{_equivalent_units('nuke',  int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def nuke_value():
+        return f"{_equivalent_units(
+            'nuke',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
+
     @output
     @render.text
-    def hydro_value(): return f"{_equivalent_units('hydro', int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def hydro_value(): 
+        return f"{_equivalent_units(
+            'hydro',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
     @output
     @render.text
-    def coal_value():  return f"{_equivalent_units('coal',  int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def coal_value():
+        return f"{_equivalent_units(
+            'coal',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
     @output
     @render.text
-    def wind_value():  return f"{_equivalent_units('wind',  int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def wind_value():
+        return f"{_equivalent_units(
+            'wind',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
     @output
     @render.text
-    def solar_value(): return f"{_equivalent_units('solar', int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def solar_value():
+        return f"{_equivalent_units(
+            'solar',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
     @output
     @render.text
-    def bio_value():   return f"{_equivalent_units('bio',   int(input.nb_dc()), float(input.facteur_charge())):,}".replace(",", " ")
+    def bio_value():
+        return f"{_equivalent_units(
+            'bio',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        ):,}".replace(",", " ")
 
     @output
     @render.text
     def nuke_pct_total():
-        eq = _equivalent_units('nuke', int(input.nb_dc()), float(input.facteur_charge()))
+        eq = _equivalent_units(
+            'nuke',
+            int(input.nb_dc()),
+            float(input.facteur_charge()),
+            float(input.puissance_mw())
+        )
         pct = (eq / NUC_REACTORS_TOTAL) * 100.0
         return f"{NUC_REACTORS_TOTAL} au total — soit {pct:.2f} % du nombre total"
 

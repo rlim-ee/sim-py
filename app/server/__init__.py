@@ -26,6 +26,12 @@ def make_server(app_dir: Path):
         @reactive.event(input.go_donnees)
         def _go_donnees():
             current_page.set("donnees")
+            
+        # ---------- home → extraction ----------
+        @reactive.effect
+        @reactive.event(input.go_extraction)
+        def _go_extraction():
+            current_page.set("extraction")
 
         # ---------- énergie / données → home ----------
         @reactive.effect
@@ -53,6 +59,10 @@ def make_server(app_dir: Path):
             if page_name == "donnees":
                 from ui.donnees_ui import donnees_ui
                 return donnees_ui()
+            
+            if page_name == "extraction":
+                from ui.extraction_ui import extraction_ui
+                return extraction_ui()
 
         # =========================================================
         # SERVEURS PAR GRAND MODULE (LAZY)
@@ -74,5 +84,12 @@ def make_server(app_dir: Path):
             if current_page.get() == "donnees" and not donnees_loaded.get():
                 donnees.server(input, output, session, app_dir)
                 donnees_loaded.set(True)
+                
+        # ---------- serveur EXTRACTION ----------
+        @reactive.effect
+        def _load_extraction_server():
+            if current_page.get() == "extraction" and not extraction_loaded.get():
+                extraction.server(input, output, session, app_dir)
+                extraction_loaded.set(True)
 
     return server
