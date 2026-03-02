@@ -68,27 +68,27 @@ def home_ui():
             ),
             
             
-            # ---------- MODULE ÉNERGIE ----------
-            ui.div(
-                {"class": "col"},
-                ui.div(
-                    {"class": "card"},
-                    ui.div(
-                        {"class": "card-title"},
-                        ui.tags.i({"class": "fa-solid fa-bolt me-2"}),
-                        "Extraction",
-                    ),
-                    ui.p(
-                        "blabla"
-                    ),
-                    ui.hr(),
-                    ui.input_action_button(
-                        "go_extraction",
-                        "Accéder au module",
-                        class_="btn btn-primary",
-                    ),
-                ),
-            ),
+            # ---------- MODULE EXTRACTION ----------
+            #ui.div(
+             #   {"class": "col"},
+              #  ui.div(
+               #     {"class": "card"},
+                #    ui.div(
+                 #       {"class": "card-title"},
+                  #      ui.tags.i({"class": "fa-solid fa-bolt me-2"}),
+                   #     "Extraction",
+                    #),
+                    #ui.p(
+                     #   "blabla"
+                   # ),
+                    #ui.hr(),
+                    #ui.input_action_button(
+                     #   "go_extraction",
+                      #  "Accéder au module",
+                       # class_="btn btn-primary",
+                   # ),
+                #),
+            #),
             
             
         ),
