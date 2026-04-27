@@ -1,0 +1,37 @@
+{
+  "titre":        "Extraction des matières premières",
+  "titre_carte":  "Extraction des matières premières",
+  "icone_carte":  "fa-solid fa-mountain me-2",
+  "presentation_module": "Ce module est dédié à l'analyse spatiale de l'extraction des matières premières stratégiques. Il s'inscrit dans une réflexion plus large sur la matérialité du numérique et la dépendance des infrastructures aux ressources minérales.",
+  "resume":       "Présentation générale",
+
+  "section1": {
+    "titre": "Extraction des matières premières",
+    "introduction_html": "Ce module présente la <strong>répartition géographique de l'extraction des matières premières</strong> à l'échelle mondiale. Il permet d'identifier les pays producteurs dominants selon le métal sélectionné et de mettre en évidence les dépendances géopolitiques associées."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "<p><strong>🔍 Enjeux stratégiques : </strong>les métaux critiques (lithium, cobalt, nickel, cuivre, terres rares, etc.) sont indispensables aux technologies numériques, énergétiques et militaires. Leur extraction est fortement concentrée dans un nombre limité de pays.</p><p><strong>🌍 Lecture spatiale : </strong>la carte permet d'observer les déséquilibres territoriaux entre pays producteurs et pays consommateurs, ainsi que les risques liés à la dépendance aux importations.</p>"
+  },
+
+  "section3": {
+    "titre":           "Paramètres",
+    "icone":           "fa-solid fa-sliders",
+    "libelle_selection": "Métal extrait",
+    "aide_selection":    "La sélection d'un métal met à jour automatiquement la carte afin d'afficher les volumes d'extraction correspondants.",
+    "choix": {
+      "lithium":      "Lithium",
+      "cobalt":       "Cobalt",
+      "nickel":       "Nickel",
+      "cuivre":       "Cuivre",
+      "terres_rares": "Terres rares"
+    }
+  },
+
+  "section4": {
+    "titre":    "Carte mondiale de l'extraction",
+    "icone":    "fa-solid fa-map-location-dot",
+    "note_html": "<strong>🗺️ Lecture de la carte : </strong>les teintes représentent les volumes d'extraction du métal sélectionné (en tonnes). Les pays les plus foncés concentrent les plus fortes productions."
+  }
+}

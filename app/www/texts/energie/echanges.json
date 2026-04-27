@@ -1,0 +1,71 @@
+{
+  "titre":        "Échanges France-Europe",
+  "libelle_onglet": "Échanges France-Europe",
+
+  "section1": {
+    "titre": "Échanges France-Europe",
+    "introduction_html": "Ce module a pour objectif de montrer <strong>les flux réels d'échanges d'électricité</strong> entre la France et ses voisins, et le rôle qu'ils jouent dans <strong>l'équilibre énergétique régional</strong>. Lorsque l'on étudie le <strong>bilan énergétique français</strong>, il est important de faire le point sur ces échanges avec les pays voisins : même si la France reste le pays qui <strong>exporte le plus d'électricité en Europe</strong>, elle importe aussi à certaines périodes, notamment lorsque l'électricité est moins chère chez ses voisins, ou lorsque les barrages hydrauliques produisent moins, par exemple en hiver. Cela pose des questions sur la part d'<strong>énergie réellement décarbonée</strong> consommée pendant certaines périodes."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "\n<div class=\"km-wrap\">\n  <p class=\"km-intro\">\n    Les flux d'électricité entre la France et ses voisins ne sont pas le signe\n    d'une dépendance, mais d'un système européen interconnecté où chaque pays\n    joue un rôle de stabilisateur.\n  </p>\n\n  <div class=\"km-grid\">\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--blue\"><i class=\"fa-solid fa-bolt\"></i></div>\n        <p class=\"km-card-title\">Pourquoi la France exporte</p>\n      </div>\n      <p class=\"km-card-text\">\n        Son parc très pilotable (<strong>nucléaire</strong> et <strong>hydraulique</strong>)\n        produit généralement un peu plus que la consommation nationale.\n        Ces surplus alimentent les voisins européens, dont la production couvre\n        souvent un peu moins leur demande. L'Italie, par exemple, dépend\n        régulièrement des importations françaises.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--amber\"><i class=\"fa-solid fa-cloud-sun-rain\"></i></div>\n        <p class=\"km-card-title\">Variations saisonnières</p>\n      </div>\n      <p class=\"km-card-text\">\n        En <strong>hiver</strong>, la demande explose ; en <strong>été</strong>, certains réacteurs\n        sont en maintenance et les barrages peuvent être moins disponibles.\n        Sur ces périodes, la France peut importer temporairement —\n        même si elle reste exportatrice à l'année.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--teal\"><i class=\"fa-solid fa-bullseye\"></i></div>\n        <p class=\"km-card-title\">Solidarité européenne</p>\n      </div>\n      <p class=\"km-card-text\">\n        Les échanges ne sont pas une fragilité mais une <strong>complémentarité</strong> :\n        la France exporte quand ses voisins ont besoin d'énergie, importe quand\n        sa propre production baisse. Cette fluidité renforce la sécurité\n        énergétique collective.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"km-highlight\">\n    <i class=\"fa-solid fa-bullseye km-highlight-icon\"></i> <strong>Ce qu'il faut retenir :</strong> même en étant globalement\n    exportatrice, la France importe à certaines périodes. Cela pose la question\n    de la part d'<em>énergie réellement décarbonée</em> que nous consommons sur ces\n    périodes, puisque le mix de nos voisins peut être plus carboné.\n  </div>\n</div>\n"
+  },
+
+  "section3": {
+    "titre": "Échanges France - Europe",
+    "icone": "fa-solid fa-arrows-left-right",
+    "parametres": {
+      "libelle_pays":         "Pays à comparer",
+      "libelle_lissage":      "Lissage (rolling, mois)",
+      "libelle_periode":      "Période (comparaison)",
+      "libelle_flux":         "Flux à comparer",
+      "choix_flux":           ["Exportations", "Importations", "Solde"],
+      "flux_defaut":          "Solde",
+      "libelle_temporalite":  "Temporalité",
+      "choix_temporalite":    ["Mensuel", "Annuel"],
+      "temporalite_defaut":   "Mensuel"
+    },
+    "titre_accordeon_html": "<span class='interp-accordion-title'><i class='fa-solid fa-lightbulb interp-accordion-icon'></i>Aide à l'interprétation — cliquez pour déplier un exemple commenté</span>",
+    "aide_html": "\n<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Lire le graphique</p>\n    <p class=\"interp-context-text\">\n      Exemple : <strong>décembre 2022</strong>, frontière\n      <strong>France ↔ Belgique/Allemagne</strong>. À cette période, les centrales\n      nucléaires françaises tournent au ralenti après plusieurs maintenances :\n      la France devient temporairement <em>importatrice nette</em>.\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-card interp-export\">\n      <div class=\"interp-card-head\">\n        <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        <p class=\"interp-card-label\">Exportations</p>\n      </div>\n      <p class=\"interp-card-value\">+0,3 TWh</p>\n      <p class=\"interp-card-text\">\n        Électricité <strong>sortie</strong> de France vers la Belgique/Allemagne.\n      </p>\n    </div>\n\n    <div class=\"interp-card interp-calc\">\n      <p class=\"interp-card-label interp-calc-label\">Calcul du solde</p>\n      <div class=\"interp-formula\">\n        <span class=\"op-pos\">+0,3</span>\n        <span class=\"op-sign\">+</span>\n        <span class=\"op-neg\">(−3,3)</span>\n        <span class=\"op-sign\">=</span>\n        <span class=\"op-result\">−3,0</span>\n      </div>\n      <p class=\"interp-card-text interp-calc-text\">\n        Solde <strong>négatif</strong> → la France a importé plus\n        qu'elle n'a exporté.\n      </p>\n    </div>\n\n    <div class=\"interp-card interp-import\">\n      <div class=\"interp-card-head interp-card-head-end\">\n        <p class=\"interp-card-label\">Importations</p>\n        <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M19 12H5M11 6l-6 6 6 6\"/></svg>\n      </div>\n      <p class=\"interp-card-value interp-text-end\">−3,3 TWh</p>\n      <p class=\"interp-card-text interp-text-end\">\n        Électricité <strong>entrée</strong> en France depuis la Belgique/Allemagne.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4M12 16h.01\"/></svg>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>Pour situer 3 TWh :</strong> c'est environ la consommation électrique\n      mensuelle d'une grande métropole comme Lyon, ou la production\n      d'un réacteur nucléaire pendant ~3 mois.\n    </p>\n  </div>\n\n</div>\n",
+    "id_accordeon": "interp-ech-compare"
+  },
+
+  "section4": {
+    "titre": "Filtres",
+    "icone": "fa-solid fa-sliders",
+    "parametres": {
+      "texte_avant_annee":  "Année (mix ",
+      "libelle_lien":       "OWID",
+      "url_lien":           "https://ourworldindata.org/energy-production-consumption",
+      "texte_apres_annee":  ")",
+      "libelle_filiere":    "Filière de production",
+      "choix_filieres": {
+        "all":   "Toutes filières",
+        "nuc":   "Nucléaire",
+        "hyd":   "Hydraulique",
+        "fos":   "Fossile (incl. gaz)",
+        "eol":   "Éolien",
+        "sol":   "Solaire",
+        "autre": "Autre"
+      },
+      "libelle_mode":  "Graphique en % (sinon TWh)",
+      "aide_mode":     "Basculer le switch pour passer de la répartition (%) au volume (TWh)."
+    }
+  },
+
+  "section5": {
+    "titre": "Mix énergétique — carte",
+    "icone": "fa-solid fa-map-location-dot",
+    "aide_html": "\n<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Lire la carte</p>\n    <p class=\"interp-context-text\">\n      Chaque pays est représenté par un <strong>diagramme circulaire</strong> qui affiche la\n      <strong>composition de son mix électrique</strong> pour l'année sélectionnée.\n      La <strong>taille du cercle</strong> reflète le <strong>volume total d'électricité produite</strong>\n      (TWh) : un grand cercle = un gros producteur.\n      Les couleurs correspondent aux filières (nucléaire, hydraulique, fossile, éolien, solaire, autre).\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-info interp-info--accent\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-atom interp-inline-icon\"></i>\n        France\n      </p>\n      <p class=\"interp-card-value interp-info-value--accent\">~65 %</p>\n      <p class=\"interp-card-text\">\n        Part du <strong>nucléaire</strong> dans le mix français — la plus élevée d'Europe.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--ok\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-wind interp-inline-icon\"></i>\n        Allemagne / Espagne\n      </p>\n      <p class=\"interp-card-value interp-info-value--ok\">&gt; 40 %</p>\n      <p class=\"interp-card-text\">\n        Part croissante de l'<strong>éolien + solaire</strong> : un mix plus\n        décarboné mais <em>plus variable</em>.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--warn\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-triangle-exclamation interp-inline-icon\"></i>\n        Point de vigilance\n      </p>\n      <p class=\"interp-card-text\">\n        Un mix très <strong>fossile</strong> chez un voisin signifie que, lorsque la France\n        <em>importe</em> chez lui, l'électricité consommée est plus carbonée.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <i class=\"fa-solid fa-circle-info\"></i>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>À retenir :</strong> comparer les pays, c'est comparer à la fois\n      <em>le volume</em> (taille du cercle) et <em>la composition</em> (parts colorées).\n      Un petit cercle très vert peut peser bien moins qu'un gros cercle moyennement carboné.\n    </p>\n  </div>\n\n</div>\n",
+    "id_accordeon": "interp-mix-map"
+  },
+
+  "section6": {
+    "titre": "Mix énergétique — graphique",
+    "icone": "fa-solid fa-chart-bar",
+    "note_html": "NB : dans ce jeu de données, la filière <strong>fossile</strong> regroupe le charbon, le pétrole et <strong>le gaz naturel</strong>, ce qui explique son poids plus élevé que dans certaines statistiques nationales.",
+    "aide_html": "\n<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Lire le graphique</p>\n    <p class=\"interp-context-text\">\n      Pour l'année sélectionnée, chaque <strong>barre</strong> représente un pays et se\n      décompose par filière de production. Deux modes d'affichage :\n      en <strong>%</strong> (répartition du mix) ou en <strong>TWh</strong>\n      (volume absolu produit). Le filtre <em>« Filière de production »</em>\n      permet d'isoler une seule énergie pour comparer les pays entre eux.\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-info interp-info--neutral\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-percent interp-inline-icon\"></i>\n        Mode %\n      </p>\n      <p class=\"interp-card-value interp-info-value--neutral\">Composition</p>\n      <p class=\"interp-card-text\">\n        Révèle <strong>la structure</strong> du mix : quel pays est le plus décarboné,\n        lequel dépend le plus des fossiles. Indépendant de la taille du pays.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--accent\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-bolt interp-inline-icon\"></i>\n        Mode TWh\n      </p>\n      <p class=\"interp-card-value interp-info-value--accent\">Volume</p>\n      <p class=\"interp-card-text\">\n        Révèle <strong>le poids absolu</strong> : même avec un mix comparable,\n        l'Allemagne ou la France produisent beaucoup plus que la Suisse ou l'Irlande.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--warn\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-triangle-exclamation interp-inline-icon\"></i>\n        Piège fréquent\n      </p>\n      <p class=\"interp-card-text\">\n        Une part de <strong>fossile</strong> de 30 % dans un petit pays peut représenter\n        <em>moins d'émissions absolues</em> qu'une part de 15 % dans un très gros\n        producteur. Toujours croiser % et TWh.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <i class=\"fa-solid fa-bullseye\"></i>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>Lien avec les échanges :</strong> ce graphique explique\n      <em>pourquoi</em> les flux observés plus haut ont l'impact climatique qu'ils ont.\n      Importer depuis un voisin à mix très fossile dégrade le contenu carbone\n      de l'électricité consommée en France sur la période.\n    </p>\n  </div>\n\n</div>\n",
+    "id_accordeon": "interp-mix-bar"
+  }
+}

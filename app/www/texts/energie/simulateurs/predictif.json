@@ -1,0 +1,129 @@
+{
+  "titre": "Analyse prédictive",
+
+  "barre_laterale": {
+    "titre": "Paramètres",
+    "introduction_html": "Déplacez les curseurs pour effectuer une estimation de la consommation d'énergie en fonction du nombre de <strong>data centers</strong>, de leur <strong>facteur de charge</strong> et de leur <strong>puissance</strong>.",
+    "curseurs": {
+      "nombre_dc": {
+        "libelle": "Nombre de DC",
+        "min": 1,
+        "max": 35,
+        "valeur": 1,
+        "pas": 1
+      },
+      "facteur_charge": {
+        "libelle": "Facteur de charge (%)",
+        "min": 0,
+        "max": 100,
+        "valeur": 100,
+        "pas": 1
+      },
+      "puissance_mw": {
+        "libelle": "Puissance par DC (MW)",
+        "min": 0,
+        "max": 1000,
+        "valeur": 200,
+        "pas": 10
+      }
+    }
+  },
+
+  "section1": {
+    "titre": "Analyse prédictive",
+    "introduction_html": "Cette simulation a pour objectif de comparer la consommation électrique projetée d'un ou plusieurs data centers (DC) avec la production totale d'énergie en France selon le <a href=\"https://www.rte-france.com/donnees-publications/etudes-prospectives/futurs-energetique-2050#Lesresultatsdeletude\" target=\"_blank\" rel=\"noopener noreferrer\">rapport RTE</a> sur la période 2025–2035.",
+    "objectif_html": "<i class='fa-solid fa-bullseye interp-inline-icon me-2'></i><strong>Objectif : </strong>évaluer l'impact énergétique potentiel du développement des data centers dans une perspective de planification énergétique nationale."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "\n<div class=\"km-wrap\">\n  <p class=\"km-intro\">\n    Les projections de ce simulateur s'appuient sur les jalons du projet\n    <strong>Data One</strong>, implanté à Eybens, qui prévoit une montée en charge\n    progressive jusqu'en 2035.\n  </p>\n\n  <div class=\"km-timeline\">\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2025</p>\n      <p class=\"km-timeline-value\">15 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2026</p>\n      <p class=\"km-timeline-value\">200 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2028</p>\n      <p class=\"km-timeline-value\">400 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2035</p>\n      <p class=\"km-timeline-value\">1 000 MW</p>\n    </div>\n  </div>\n\n  <div class=\"km-grid\">\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--purple\"><i class=\"fa-solid fa-chart-column\"></i></div>\n        <p class=\"km-card-title\">Extrapolation possible</p>\n      </div>\n      <p class=\"km-card-text\">\n        La simulation permet d'explorer jusqu'à <strong>35 data centers</strong>\n        équivalents pour imaginer différents scénarios de montée en charge\n        au-delà des jalons Data One.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--blue\"><i class=\"fa-solid fa-lightbulb\"></i></div>\n        <p class=\"km-card-title\">Conversion puissance → énergie</p>\n      </div>\n      <p class=\"km-card-text\">\n        Pour passer d'une puissance installée (GW) à une énergie annuelle (GWh),\n        on multiplie par le temps de fonctionnement et un facteur de charge\n        (taux d'utilisation moyen).\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"km-highlight\">\n    <code>Énergie (GWh/an) = Puissance (GW) × 24 × 365 × facteur de charge</code><br>\n    <em>Exemple : 1 GW avec 60 % de facteur de charge → ~5,26 TWh/an</em>\n  </div>\n</div>\n"
+  },
+
+  "section3": {
+    "titre": "Tendances 2000–2050 (références)",
+    "lecture_html": "<strong>Lecture : </strong>historique de la production et de la consommation électrique en France et projection selon les scénarios RTE."
+  },
+
+  "section4": {
+    "titre_html": "<span class='eq-title-wrap'><i class='fa-solid fa-scale-balanced eq-title-icon'></i>Combien d'unités de production faudrait-il pour alimenter les data centers en 2035&nbsp;?</span>",
+    "introduction_html": "Pour chaque filière, nombre d'unités qu'il faudrait construire en France afin de produire la même quantité d'électricité que les data centers projetés. Les paramètres (nombre de DC, puissance, facteur de charge) se règlent dans l'encart de gauche. Chaque encart indique aussi la <strong>part du parc national actuel</strong> que cela représenterait.",
+    "familles": {
+      "bas_carbone": {
+        "icone_html":  "<i class='fa-solid fa-leaf eq-family-icon'></i>",
+        "libelle":     "Bas-carbone pilotable",
+        "classe_css":  "eq-family-label eq-family-low-carbon"
+      },
+      "renouvelables_variables": {
+        "icone_html":  "<i class='fa-solid fa-cloud-sun eq-family-icon'></i>",
+        "libelle":     "Renouvelables variables",
+        "classe_css":  "eq-family-label eq-family-variable"
+      },
+      "fossile_ref": {
+        "icone_html":  "<i class='fa-solid fa-smog eq-family-icon'></i>",
+        "libelle":     "Fossile — référence historique",
+        "classe_css":  "eq-family-label eq-family-fossil"
+      }
+    },
+    "kpis": {
+      "nucleaire": {
+        "icone":        "fa-solid fa-atom",
+        "accent":       "accent-nuke",
+        "tonalite":     "kpi-low-carbon",
+        "titre":        "Réacteurs nucléaires",
+        "output_value": "nuke_value",
+        "output_pct":   "nuke_pct_total",
+        "reference":    "1 unité ≈ 8,2 TWh/an (réacteur type 900 MW)"
+      },
+      "hydraulique": {
+        "icone":        "fa-solid fa-water",
+        "accent":       "accent-hydro",
+        "tonalite":     "kpi-low-carbon",
+        "titre":        "Grands barrages hydroélectriques",
+        "output_value": "hydro_value",
+        "output_pct":   "hydro_pct_total",
+        "reference":    "1 unité ≈ 1,5 TWh/an (ordre de Serre-Ponçon)"
+      },
+      "biomasse": {
+        "icone":        "fa-solid fa-leaf",
+        "accent":       "accent-bio",
+        "tonalite":     "kpi-low-carbon",
+        "titre":        "Centrales à biomasse",
+        "output_value": "bio_value",
+        "output_pct":   "bio_pct_total",
+        "reference":    "1 unité ≈ 0,1 TWh/an (centrale moyenne)"
+      },
+      "eolien": {
+        "icone":        "fa-solid fa-wind",
+        "accent":       "accent-wind",
+        "tonalite":     "kpi-low-carbon",
+        "titre":        "Parcs éoliens terrestres",
+        "output_value": "wind_value",
+        "output_pct":   "wind_pct_total",
+        "output_extra": "wind_surface",
+        "reference":    "1 parc ≈ 50 turbines ≈ 0,20 TWh/an"
+      },
+      "solaire": {
+        "icone":        "fa-solid fa-solar-panel",
+        "accent":       "accent-solar",
+        "tonalite":     "kpi-low-carbon",
+        "titre":        "Centrales photovoltaïques",
+        "output_value": "solar_value",
+        "output_pct":   "solar_pct_total",
+        "output_extra": "solar_surface",
+        "reference":    "1 centrale ≥ 5 MW ≈ 0,012 TWh/an"
+      },
+      "charbon": {
+        "icone":        "fa-solid fa-industry",
+        "accent":       "accent-coal",
+        "tonalite":     "kpi-fossil",
+        "titre":        "Centrales à charbon",
+        "output_value": "coal_value",
+        "output_pct":   "coal_pct_total",
+        "reference":    "1 unité ≈ 3 TWh/an (type Cordemais, 1 200 MW)"
+      }
+    },
+    "aide_html": "\n<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Comment lire</p>\n    <p class=\"interp-context-text\">\n      Chaque encart répond à la même question : <strong>combien d'unités de cette filière\n      faudrait-il construire pour produire l'équivalent de l'électricité consommée par les\n      data centers projetés en 2035</strong>&nbsp;? Les six options sont\n      <strong>mutuellement exclusives</strong>&nbsp;: il ne s'agit pas de les additionner,\n      mais de les comparer pour mesurer l'effort selon la filière choisie.\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-info interp-info--ok\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-leaf interp-inline-icon\"></i>\n        Bas-carbone pilotable\n      </p>\n      <p class=\"interp-card-text\">\n        Nucléaire, hydraulique, biomasse&nbsp;: production\n        <strong>décarbonée et disponible à la demande</strong>.\n        Unités lourdes mais peu nombreuses à construire.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--accent\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-cloud-sun interp-inline-icon\"></i>\n        Renouvelables variables\n      </p>\n      <p class=\"interp-card-text\">\n        Éolien, solaire&nbsp;: <strong>décarbonés aussi</strong>, mais\n        dépendants du vent et du soleil. Beaucoup plus d'unités à bâtir,\n        surface au sol plus importante.\n      </p>\n    </div>\n\n    <div class=\"interp-info interp-info--warn\">\n      <p class=\"interp-card-label\">\n        <i class=\"fa-solid fa-triangle-exclamation interp-inline-icon\"></i>\n        Charbon — référence historique\n      </p>\n      <p class=\"interp-card-text\">\n        Il ne reste que <strong>2 centrales actives</strong> (fermeture 2027).\n        L'encart montre <em>combien il aurait fallu</em> de centrales à l'ancienne\n        pour faire le même travail — utile pour mesurer le progrès de la décarbonation.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <i class=\"fa-solid fa-bullseye\"></i>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>À retenir&nbsp;:</strong> le nombre d'unités varie énormément selon la filière\n      parce que leur <em>puissance individuelle</em> varie énormément. Un réacteur nucléaire\n      produit autant qu'environ 40 parcs éoliens ou 680 centrales photovoltaïques de taille\n      moyenne. Le vrai arbitrage n'est pas \"quel chiffre est le plus petit\", mais\n      <strong>à quel coût, quelle emprise au sol et quel rythme de construction</strong>.\n    </p>\n  </div>\n\n</div>\n",
+    "id_accordeon": "interp-equivalents-2035"
+  }
+}

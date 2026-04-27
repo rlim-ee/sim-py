@@ -1,0 +1,44 @@
+{
+  "titre":              "FLAP-D — Pays d'origine (HQ)",
+  "titre_carte":        "FLAP-D — Pays d'origine (HQ)",
+  "icone_carte":        "fa-solid fa-globe me-2",
+  "presentation_module": "Ce module documente les sources et présente certains jeux de données clés utilisés dans les analyses.",
+  "resume":              "Présentation du module Données",
+
+  "section1": {
+    "titre":        "Europe",
+    "introduction": "Ce module explore l'origine géographique des entreprises opérant les data centers des cinq hubs FLAP-D : Francfort, Londres, Amsterdam, Paris et Dublin.",
+    "instruction_carte_html": "Cliquez sur un <strong>hub</strong> pour afficher la vue détaillée. Re-cliquez sur le <strong>hub actif</strong> pour revenir à la vue globale."
+  },
+
+  "section2": {
+    "id_titre":     "titre_carte_hq",
+    "icone":        "fa-solid fa-layer-group",
+    "titre_aide":   "Comment lire cette carte ?",
+    "elements_aide": [
+      "Coloration : part (%) des entreprises du hub.",
+      "Flèches : pays siège → hub.",
+      "Points gris : localisation des sièges."
+    ]
+  },
+
+  "section3": {
+    "titre":        "Répartition des entreprises",
+    "icone":        "fa-solid fa-chart-area",
+    "titre_aide":   "Lecture du treemap",
+    "elements_aide": [
+      "Surface = importance relative.",
+      "Cliquer pour zoomer."
+    ]
+  },
+
+  "section4": {
+    "id_titre":     "titre_top5",
+    "icone":        "fa-solid fa-ranking-star",
+    "titre_aide":   "Que montre ce Top 5 ?",
+    "elements_aide": [
+      "Nombre de DC = présence.",
+      "Score share_info = transparence."
+    ]
+  }
+}

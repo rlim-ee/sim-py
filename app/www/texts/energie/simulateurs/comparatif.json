@@ -1,0 +1,51 @@
+{
+  "titre": "Analyse comparative",
+
+  "barre_laterale": {
+    "titre_profils":    "Profils de consommation",
+    "titre_personnalise": "Comparaison personnalisée"
+  },
+
+  "section1": {
+    "titre": "Analyse comparative",
+    "introduction_html": "Ce graphique permet de représenter et de comparer le nombre d'habitants équivalents pour chaque palier de consommation du data center d'Eybens entre 2025 et 2035. Et ce, en prenant des exemples de profils de consommation du secteur résidentiel uniquement et ceux par personne à travers le monde et en France. Les barres représentent le nombre d'habitants équivalents selon la consommation moyenne."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "\n<div class=\"km-wrap\">\n  <p class=\"km-intro\">\n    Ce simulateur traduit les projections de puissance de <strong>Data One</strong>\n    en équivalents de consommation humaine, pour rendre tangibles les ordres\n    de grandeur du numérique face aux usages résidentiels.\n  </p>\n\n  <div class=\"km-timeline\">\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2025</p>\n      <p class=\"km-timeline-value\">15 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2026</p>\n      <p class=\"km-timeline-value\">200 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2028</p>\n      <p class=\"km-timeline-value\">400 MW</p>\n    </div>\n    <div class=\"km-timeline-step\">\n      <p class=\"km-timeline-year\">2035</p>\n      <p class=\"km-timeline-value\">1 000 MW</p>\n    </div>\n  </div>\n\n  <div class=\"km-grid\">\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--blue\"><i class=\"fa-solid fa-magnifying-glass\"></i></div>\n        <p class=\"km-card-title\">Point de départ</p>\n      </div>\n      <p class=\"km-card-text\">\n        L'estimation initiale se base sur le data center en construction à\n        <strong>Eybens</strong> (Isère), puis extrapole selon les jalons publics\n        du projet Data One.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--amber\"><i class=\"fa-solid fa-lightbulb\"></i></div>\n        <p class=\"km-card-title\">Conversion puissance → énergie</p>\n      </div>\n      <p class=\"km-card-text\">\n        Pour comparer une puissance installée (GW) à une consommation humaine\n        annuelle, on convertit en GWh/an en multipliant par le temps de\n        fonctionnement annuel (24 × 365).\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--purple\"><i class=\"fa-solid fa-people-group\"></i></div>\n        <p class=\"km-card-title\">Habitants équivalents</p>\n      </div>\n      <p class=\"km-card-text\">\n        On divise ensuite la consommation annuelle du DC par la consommation\n        moyenne d'une personne (selon le profil choisi) pour obtenir le nombre\n        d'habitants équivalents.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"km-highlight\">\n    <i class=\"fa-solid fa-calculator km-highlight-icon\"></i> <strong>Exemple — projection 2035 (1 GW) :</strong><br>\n    <code>Énergie = 1 × 24 × 365 = 8 760 GWh/an</code><br>\n    soit <strong>8,76 TWh/an</strong> — ou encore 8 760 000 MWh/an, 8 760 000 000 kWh/an.\n  </div>\n</div>\n"
+  },
+
+  "section3": {
+    "titre": "Habitants équivalents par palier (profils sélectionnés)",
+    "lecture_html": "<i class='fa-solid fa-lightbulb interp-inline-icon me-2'></i><strong>Aide d'interprétation pour l'échelle mondiale :</strong> Pour un data center d'une puissance de 1 GW, cela correspond à la consommation énergétique résidentielle annuelle de 3 275 991 personnes, basée sur la moyenne mondiale de 2,674 MWh par personne et par an."
+  },
+
+  "section4": {
+    "titre_html": "<i class='fa-solid fa-lightbulb interp-inline-icon me-2'></i>Focus sur 3 pays : équivalents en population pour un data center de 1 GW",
+    "pays": {
+      "qatar": {
+        "libelle":      "Qatar",
+        "output_value": "qatar_1gw",
+        "output_pop":   "qatar_pop",
+        "output_pct":   "qatar_pct"
+      },
+      "france": {
+        "libelle":      "France",
+        "output_value": "france_1gw",
+        "output_pop":   "france_pop",
+        "output_pct":   "france_pct"
+      },
+      "mali": {
+        "libelle":      "Mali",
+        "output_value": "mali_1gw",
+        "output_pop":   "mali_pop",
+        "output_pct":   "mali_pct"
+      }
+    }
+  },
+
+  "section5": {
+    "titre": "Comparaison personnalisée"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "titre": "Commun — textes partagés",
+
+  "section1": {
+    "titre": "Pied de page",
+    "credits_html": "<span>Conception &amp; développement : </span><strong>Zoé CARGNELLI</strong><span> &amp; </span><strong>Robert LIM</strong><br><span>© 2025/26 — Matérialité du numérique • Projet VerIT</span>",
+    "funding_text": "Opération soutenue par l'État dans le cadre de l'AMI « Compétences et Métiers d'Avenir » du programme France 2030, opéré par la Caisse des Dépôts (La Banque des Territoires)."
+  },
+
+  "section2": {
+    "titre": "Textes alternatifs des images",
+    "alt_logo_partenaires":       "Partenaires",
+    "alt_logo_partenaires_sombre": "Partenaires (mode sombre)"
+  },
+
+  "section3": {
+    "titre":             "Barre de navigation supérieure",
+    "marque_html":       "Matérialité du numérique • Projet VerIT",
+    "alt_logo":          "VERIT",
+    "url_logo":          "https://ensimag.grenoble-inp.fr/fr/l-ecole/projet-verit",
+    "libelle_mode_sombre": "Mode sombre",
+    "titre_page":        "Matérialité du numérique",
+    "bouton_accueil_html": "<i class='fa-solid fa-arrow-left'></i><span>Retour à l'accueil</span>",
+    "titre_remonter":    "Remonter en haut",
+    "aria_remonter":     "Remonter en haut de la page"
+  },
+
+  "section4": {
+    "titre": "Accordéons réutilisables",
+    "interp_accordion_title_html": "<span class='interp-accordion-title'><i class='fa-solid fa-lightbulb interp-accordion-icon'></i>Aide à l'interprétation — cliquez pour déplier</span>",
+    "libelle_savoir_plus": "Savoir plus"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "titre": "Matérialité du numérique",
+  "appel_action_html": "Accéder au module <span class='home-module-arrow'>→</span>",
+
+  "section1": {
+    "titre": "Tableau de bord · recherche",
+    "introduction": "Derrière chaque requête, chaque fichier stocké, chaque modèle d'IA entraîné se cache une <strong>matérialité</strong> : bâtiments, électricité, métaux, infrastructures réseau. Ce tableau de bord explore l'empreinte physique du numérique, à travers son cycle de vie."
+  },
+
+  "section2": {
+    "titre": "Explorer les modules"
+  },
+
+  "stats": {
+    "flapd":   { "valeur": "5",         "libelle": "hubs FLAP-D cartographiés" },
+    "pays":    { "valeur": "9",         "libelle": "pays européens analysés"   },
+    "periode": { "valeur": "2014–2035", "libelle": "période couverte"          },
+    "dataone": { "valeur": "+1 GW",     "libelle": "projection Data One 2035"  }
+  },
+
+  "modules": {
+    "energie": {
+      "icone":   "fa-bolt",
+      "accent":  "amber",
+      "kicker":  "Infrastructures & énergie",
+      "titre":   "Consommation énergétique",
+      "accroche": "Où sont les data centers européens, comment sont-ils alimentés, et quel est leur poids dans le système électrique ?",
+      "contenu": [
+        "Répartition en Europe (densité par habitant)",
+        "Les 5 hubs FLAP-D en détail",
+        "Bilan régional production / consommation",
+        "Échanges transfrontaliers France ↔ voisins",
+        "Simulateurs de montée en charge"
+      ]
+    },
+    "donnees": {
+      "icone":   "fa-microchip",
+      "accent":  "blue",
+      "kicker":  "Acteurs & souveraineté",
+      "titre":   "Données",
+      "accroche": "Qui opère réellement l'infrastructure numérique européenne, et depuis où ?",
+      "contenu": [
+        "Origine géographique des opérateurs",
+        "Répartition des capacités par hub",
+        "Lecture souveraineté / dépendance"
+      ]
+    },
+    "extraction": {
+      "icone":   "fa-industry",
+      "accent":  "coral",
+      "kicker":  "Matières premières",
+      "titre":   "Extraction",
+      "accroche": "Quels métaux sont extraits, et où, pour construire l'infrastructure du numérique ?",
+      "contenu": [
+        "Carte mondiale des sites d'extraction",
+        "Filtrage par métal (cuivre, silicium, lithium…)",
+        "Lien avec la chaîne de valeur numérique"
+      ]
+    }
+  }
+}

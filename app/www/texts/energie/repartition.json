@@ -1,0 +1,54 @@
+{
+  "titre":       "Répartition des DC — Europe",
+  "titre_carte": "Répartition des DC",
+  "icone_carte": "fa-solid fa-chart-area me-2",
+  "libelle_onglet": "Europe",
+
+  "section1": {
+    "titre": "Europe",
+    "introduction_html": "Ce module présente la distribution spatiale des data centers en Europe et met en évidence les logiques de concentration géographique du secteur numérique. La carte met en relation<strong> le nombre total de data centers par pays avec la population, </strong>afin de mesurer l'intensité relative de l'équipement numérique."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "<div class=\"km-wrap\">\n  <p class=\"km-intro\">\n    Une implantation qui n'est pas neutre : plusieurs facteurs combinés\n    expliquent pourquoi les data centers se concentrent dans certaines zones\n    d'Europe, et pourquoi cette géographie pourrait bientôt se recomposer.\n  </p>\n\n  <div class=\"km-grid\">\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--blue\"><i class=\"fa-solid fa-map-location-dot\"></i></div>\n        <p class=\"km-card-title\">Déterminants classiques</p>\n      </div>\n      <p class=\"km-card-text\">\n        Proximité des marchés et des utilisateurs, connectivité internationale\n        (câbles sous-marins, points de peering), disponibilité foncière et\n        stabilité réglementaire.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--amber\"><i class=\"fa-solid fa-bolt\"></i></div>\n        <p class=\"km-card-title\">Le facteur énergétique</p>\n      </div>\n      <p class=\"km-card-text\">\n        Sécurité et compétitivité de l'approvisionnement électrique : critère\n        devenu décisif. Les DC dédiés à l'IA sont <strong>fortement électro-intensifs</strong>\n        (1 GW et plus pour les plus grands) et cherchent une énergie abondante,\n        stable et décarbonée.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--purple\"><i class=\"fa-solid fa-earth-europe\"></i></div>\n        <p class=\"km-card-title\">Une nouvelle carte à venir</p>\n      </div>\n      <p class=\"km-card-text\">\n        La géographie du numérique, historiquement centrée sur les hubs\n        métropolitains, pourrait se redéfinir autour des territoires offrant\n        un accès durable à l'électricité bas carbone. Transition numérique et\n        transition énergétique s'entremêlent.\n      </p>\n    </div>\n\n  </div>\n</div>"
+  },
+
+  "section3": {
+    "titre": "Répartition des data centers en Europe",
+    "icone": "fa-solid fa-map-location-dot",
+    "titre_accordeon_html": "<span class='interp-accordion-title'><i class='fa-solid fa-lightbulb interp-accordion-icon'></i>Aide à l'interprétation — cliquez pour déplier</span>",
+    "aide_html": "<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Comment lire</p>\n    <p class=\"interp-context-text\">\n      Deux lectures superposées sur cette carte : la <strong>couleur</strong>\n      traduit la densité (DC par million d'habitants), la <strong>taille des cercles</strong>\n      traduit le volume absolu de data centers.\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-info interp-info--ok\">\n      <p class=\"interp-card-label\">🇮🇪 Irlande</p>\n      <p class=\"interp-card-value interp-info-value--ok\">+20</p>\n      <p class=\"interp-card-text\">DC par million hab. — record européen</p>\n    </div>\n\n    <div class=\"interp-info interp-info--neutral\">\n      <p class=\"interp-card-label\">🇪🇺 Moyenne UE</p>\n      <p class=\"interp-card-value interp-info-value--neutral\">≈ 6</p>\n      <p class=\"interp-card-text\">DC par million hab. — référence</p>\n    </div>\n\n    <div class=\"interp-info interp-info--warn\">\n      <p class=\"interp-card-label\"><i class=\"fa-solid fa-triangle-exclamation interp-inline-icon\"></i>Point de vigilance</p>\n      <p class=\"interp-card-text\">\n        Dans les pays peu peuplés du Nord, quelques DC suffisent à\n        <strong>gonfler le ratio</strong>. La couleur seule est trompeuse —\n        regardez aussi la taille du cercle.\n      </p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4M12 16h.01\"/></svg>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>À retenir :</strong> l'Irlande se distingue réellement car elle combine\n      <em>volume</em> (gros cercle) ET <em>densité</em> (teinte forte), ce qui n'est pas\n      le cas des pays nordiques à forte teinte seule.\n    </p>\n  </div>\n\n</div>"
+  },
+
+  "section4": {
+    "titre": "Part du nombre des DC en Europe",
+    "icone": "fa-solid fa-chart-bar",
+    "titre_accordeon_html": "<span class='interp-accordion-title'><i class='fa-solid fa-lightbulb interp-accordion-icon'></i>Aide à l'interprétation — cliquez pour déplier</span>",
+    "aide_html": "<div class=\"interp-wrap\">\n\n  <div class=\"interp-context\">\n    <p class=\"interp-context-eyebrow\">Lire le classement</p>\n    <p class=\"interp-context-text\">\n      Le classement des pays européens par nombre total de data centers recensés.\n      Quelques pays dominent largement la scène européenne.\n    </p>\n  </div>\n\n  <div class=\"interp-grid\">\n\n    <div class=\"interp-info interp-info--neutral\">\n      <p class=\"interp-card-label\">Top 4</p>\n      <p class=\"interp-flags\">🇩🇪 🇬🇧 🇫🇷 🇳🇱</p>\n      <p class=\"interp-card-text\">Allemagne, Royaume-Uni, France, Pays-Bas</p>\n    </div>\n\n    <div class=\"interp-info interp-info--accent\">\n      <p class=\"interp-card-label\">+ 🇮🇪 = FLAP-D</p>\n      <p class=\"interp-card-value interp-info-value--accent\">5 hubs</p>\n      <p class=\"interp-card-text\">Francfort · Londres · Amsterdam · Paris · Dublin</p>\n    </div>\n\n    <div class=\"interp-info interp-info--warn\">\n      <p class=\"interp-card-label\">Concentration</p>\n      <p class=\"interp-card-value interp-info-value--warn\">&gt; 50 %</p>\n      <p class=\"interp-card-text\">des DC européens concentrés dans 5 pays</p>\n    </div>\n\n  </div>\n\n  <div class=\"interp-scale\">\n    <div class=\"interp-scale-icon\">\n      <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 8v4M12 16h.01\"/></svg>\n    </div>\n    <p class=\"interp-scale-text\">\n      <strong>Pourquoi cette concentration ?</strong> Ces pays cumulent connectivité\n      internationale (câbles sous-marins, points de peering), marchés financiers,\n      stabilité réglementaire et maturité du numérique.\n    </p>\n  </div>\n\n</div>"
+  },
+
+  "kpis": {
+    "total":  {
+      "icone":       "fa-solid fa-bolt",
+      "accent":      "accent-bolt",
+      "titre":       "Data centers recensés",
+      "description": "Nombre total de data centres recensés",
+      "output_id":   "kpi_total_dc"
+    },
+    "leader": {
+      "icone":       "fa-solid fa-ranking-star",
+      "accent":      "accent-rank",
+      "titre":       "Pays leader",
+      "description": "Part de l'Allemagne",
+      "output_id":   "kpi_leader_value"
+    },
+    "top10":  {
+      "icone":       "fa-solid fa-globe",
+      "accent":      "accent-geo",
+      "titre":       "Concentration géographique",
+      "description": "Part des 10 premiers pays",
+      "output_id":   "kpi_top10"
+    }
+  }
+}

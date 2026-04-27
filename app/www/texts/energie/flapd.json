@@ -1,0 +1,35 @@
+{
+  "titre":        "FLAP-D — Hubs européens",
+  "libelle_onglet": "FLAP-D",
+
+  "section1": {
+    "titre": "FLAP-D",
+    "introduction_html": "Ce module présente une analyse détaillée des Data Centers situés dans les cinq grands hubs européens regroupés sous l'acronyme FLAP-D : <strong>Francfort, Londres, Amsterdam, Paris et Dublin.</strong> Ces pôles concentrent une part importante des capacités d'hébergement et de connectivité en Europe."
+  },
+
+  "section2": {
+    "titre": "Savoir plus",
+    "contenu_html": "<div class=\"km-wrap\">\n  <p class=\"km-intro\">\n    Comment les données ont-elles été construites, et que peut-on en tirer ?\n    Quelques clés sur la méthode derrière la carte et le tableau.\n  </p>\n\n  <div class=\"km-grid\">\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--blue\"><i class=\"fa-solid fa-compass\"></i></div>\n        <p class=\"km-card-title\">Rattachement au hub</p>\n      </div>\n      <p class=\"km-card-text\">\n        Chaque data center est automatiquement associé au hub FLAP-D le plus\n        proche (Francfort, Londres, Amsterdam, Paris, Dublin) via un calcul\n        de distance géographique à partir de ses coordonnées exactes.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--purple\"><i class=\"fa-solid fa-ruler-combined\"></i></div>\n        <p class=\"km-card-title\">Deux lectures complémentaires</p>\n      </div>\n      <p class=\"km-card-text\">\n        La <strong>carte</strong> visualise les sites individuellement : surface au sol,\n        puissance électrique installée. Le <strong>tableau</strong> synthétise les moyennes\n        et totaux par hub pour comparer leurs profils.\n      </p>\n    </div>\n\n    <div class=\"km-card\">\n      <div class=\"km-card-head\">\n        <div class=\"km-card-icon km-card-icon--amber\"><i class=\"fa-solid fa-magnifying-glass\"></i></div>\n        <p class=\"km-card-title\">Sources &amp; complétude</p>\n      </div>\n      <p class=\"km-card-text\">\n        Données harmonisées depuis <strong>DataCenterMap</strong> (avril 2025).\n        Certaines variables (surface, puissance, PUE) ne sont pas toujours\n        renseignées : les pastilles colorées signalent le taux de couverture.\n      </p>\n    </div>\n\n  </div>\n</div>"
+  },
+
+  "section3": {
+    "titre": "Carte des Data Centers FLAP-D",
+    "icone": "fa-solid fa-map-location-dot",
+    "note_html": "<i class='fa-solid fa-map-location-dot interp-inline-icon me-2'></i><strong>Lecture de la carte : </strong>les cercles représentent les data centers du hub sélectionné. Leur taille dépend de la surface (m²) et leur couleur de la puissance électrique (MW). Les communes limitrophes sont automatiquement incluses pour mieux représenter chaque pôle géographique."
+  },
+
+  "section4": {
+    "titre": "Tableau synthétique – FLAP-D",
+    "icone": "fa-solid fa-table",
+    "note_html": "<i class='fa-solid fa-chart-column interp-inline-icon me-2'></i><strong>Lecture du tableau : </strong>chaque hub présente des indicateurs moyens et totaux. Les pastilles colorées indiquent la complétude de l'information pour chaque variable (surface, puissance, PUE). Le tableau est<strong> triable</strong> par ordre<strong> croissant/décroissant</strong> en cliquant l'en-tête de la colonne."
+  },
+
+  "boutons": {
+    "frankfurt": { "id": "go_frankfurt", "libelle": "🇩🇪 Francfort", "classe": "btn btn-outline-primary w-100" },
+    "london":    { "id": "go_london",    "libelle": "🇬🇧 Londres",   "classe": "btn btn-outline-primary w-100" },
+    "amsterdam": { "id": "go_amsterdam", "libelle": "🇳🇱 Amsterdam", "classe": "btn btn-outline-primary w-100" },
+    "paris":     { "id": "go_paris",     "libelle": "🇫🇷 Paris",     "classe": "btn btn-outline-primary w-100" },
+    "dublin":    { "id": "go_dublin",    "libelle": "🇮🇪 Dublin",    "classe": "btn btn-outline-primary w-100" },
+    "reset":     { "id": "reset_vue",    "libelle_html": "<i class='fa-solid fa-earth-europe me-2'></i>Vue globale", "classe": "btn reset-btn w-100" }
+  }
+}
